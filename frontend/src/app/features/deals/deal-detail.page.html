@@ -1,0 +1,150 @@
+<a class="breadcrumb" routerLink="/pipeline">
+  <app-icon name="chevron" class="icon--back" [flip]="true" /> {{ 'nav.pipeline' | t }}
+</a>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">{{ errorText() }}</div>
+} @else if (deal.isLoading() && !deal.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (deal.value(); as d) {
+  <header class="page-header">
+    <div>
+      <h1 data-testid="deal-title">
+        <bdi>{{ d.title }}</bdi>
+      </h1>
+      <p>
+        <a [routerLink]="['/companies', d.company.id]"
+          ><bdi>{{ d.company.name }}</bdi></a
+        >
+        ·
+        <span [class]="'badge badge--' + d.stage" data-testid="deal-stage">{{
+          'stage.' + d.stage | t
+        }}</span>
+      </p>
+    </div>
+    <div class="page-header__actions">
+      @if (canEdit() && !closed()) {
+        <a class="btn" [routerLink]="['/deals', d.id, 'edit']"
+          ><app-icon name="edit" /> {{ 'common.edit' | t }}</a
+        >
+      }
+      @if (auth.isAdmin()) {
+        <button type="button" class="btn btn--danger" (click)="remove()">
+          <app-icon name="trash" /> {{ 'common.delete' | t }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <ol class="stepper" [attr.aria-label]="'deals.stepper' | t">
+    @for (step of steps(); track step.stage) {
+      <li
+        [class.is-done]="step.done"
+        [class.is-won]="step.stage === 'WON'"
+        [class.is-lost]="step.stage === 'LOST'"
+        [attr.aria-current]="step.current ? 'step' : null"
+      >
+        {{ 'stage.' + step.stage | t }}
+        @if (step.current) {
+          <span class="visually-hidden">({{ 'deals.current' | t }})</span>
+        }
+      </li>
+    }
+  </ol>
+
+  @if (canEdit()) {
+    <div class="toolbar" data-testid="stage-actions">
+      @if (closed()) {
+        <button type="button" class="btn" (click)="move('NEGOTIATION')" data-testid="reopen">
+          {{ 'deals.reopen' | t }}
+        </button>
+      } @else {
+        @if (next(); as n) {
+          <button type="button" class="btn btn--primary" (click)="move(n)" data-testid="next-stage">
+            {{ 'deals.nextStage' | t: { stage: ('stage.' + n | t) } }}
+          </button>
+        }
+        <button type="button" class="btn" (click)="move('WON')" data-testid="mark-won">
+          <app-icon name="check" /> {{ 'deals.markWon' | t }}
+        </button>
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="move('LOST')"
+          data-testid="mark-lost"
+        >
+          <app-icon name="x" /> {{ 'deals.markLost' | t }}
+        </button>
+      }
+    </div>
+  } @else {
+    <p class="hint">{{ 'common.readOnlyHint' | t }}</p>
+  }
+
+  <div class="split">
+    <div>
+      <section class="card" aria-labelledby="details-title">
+        <h2 id="details-title" class="visually-hidden">{{ 'deals.title' | t }}</h2>
+        <dl class="detail-list">
+          <dt>{{ 'deals.amount' | t }}</dt>
+          <dd class="num">{{ fmt.money(d.amount) }}</dd>
+          <dt>{{ 'deals.probability' | t }}</dt>
+          <dd class="num">{{ fmt.percent(d.probability) }}</dd>
+          <dt>{{ 'deals.weighted' | t }}</dt>
+          <dd class="num">{{ fmt.money(d.weightedAmount) }}</dd>
+          <dt>{{ 'deals.contact' | t }}</dt>
+          <dd>
+            @if (d.contact) {
+              <bdi>{{ d.contact.fullName }}</bdi>
+            } @else {
+              —
+            }
+          </dd>
+          <dt>{{ 'common.owner' | t }}</dt>
+          <dd>
+            <bdi>{{ d.owner.fullName }}</bdi>
+          </dd>
+          <dt>{{ 'deals.expectedClose' | t }}</dt>
+          <dd>{{ d.expectedCloseDate ? fmt.day(d.expectedCloseDate) : '—' }}</dd>
+          <dt>{{ 'deals.created' | t }}</dt>
+          <dd>{{ fmt.date(d.createdAt) }}</dd>
+          @if (d.closedAt) {
+            <dt>{{ 'deals.closedAt' | t }}</dt>
+            <dd>{{ fmt.dateTime(d.closedAt) }}</dd>
+          }
+          @if (d.lostReason) {
+            <dt>{{ 'deals.lostReason' | t }}</dt>
+            <dd data-testid="lost-reason">
+              <bdi>{{ d.lostReason }}</bdi>
+            </dd>
+          }
+        </dl>
+      </section>
+      <div class="section-gap">
+        <app-activity-timeline [dealId]="dealId()" />
+      </div>
+    </div>
+    <div>
+      <app-task-panel [dealId]="dealId()" />
+      <section class="card section-gap" aria-labelledby="history-title">
+        <h2 id="history-title">{{ 'deals.history' | t }}</h2>
+        <ol class="list" data-testid="history">
+          @for (h of history.value() ?? []; track h.id) {
+            <li>
+              <span class="list__main">
+                <strong>
+                  @if (h.fromStage) {
+                    {{ 'stage.' + h.fromStage | t }} <app-icon name="chevron" [flip]="true" />
+                  }
+                  {{ 'stage.' + h.toStage | t }}
+                </strong>
+                <span class="muted mono" dir="ltr">{{ h.changedBy }}</span>
+              </span>
+              <span class="muted">{{ fmt.dateTime(h.changedAt) }}</span>
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+  </div>
+}

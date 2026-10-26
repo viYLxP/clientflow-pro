@@ -1,0 +1,122 @@
+<a class="breadcrumb" [routerLink]="isEdit() ? ['/companies', id()] : '/companies'">
+  <app-icon name="chevron" class="icon--back" [flip]="true" /> {{ 'common.back' | t }}
+</a>
+<header class="page-header">
+  <div>
+    <h1>{{ (isEdit() ? 'companies.edit' : 'companies.new') | t }}</h1>
+  </div>
+</header>
+
+@if (isEdit() && detail.isLoading()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (isEdit() && detail.error()) {
+  <div class="alert alert--danger" role="alert">{{ 'errors.NOT_FOUND' | t }}</div>
+} @else if (readOnly()) {
+  <div class="alert alert--info" role="status">{{ 'common.readOnlyHint' | t }}</div>
+} @else {
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (errorText()) {
+      <div class="alert alert--danger" role="alert" data-testid="form-error">{{ errorText() }}</div>
+    }
+    <div class="form-grid">
+      <div class="field form-grid--full">
+        <label for="name">{{ 'common.name' | t }}</label>
+        <input id="name" formControlName="name" aria-describedby="name-err" />
+        <app-field-error
+          id="name-err"
+          [control]="form.controls.name"
+          [server]="serverFields()['name']"
+        />
+      </div>
+      <div class="field">
+        <label for="industry"
+          >{{ 'companies.industry' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input id="industry" formControlName="industry" />
+      </div>
+      <div class="field">
+        <label for="city"
+          >{{ 'common.city' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input id="city" formControlName="city" />
+      </div>
+      <div class="field">
+        <label for="phone"
+          >{{ 'common.phone' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input
+          id="phone"
+          type="tel"
+          formControlName="phone"
+          dir="ltr"
+          aria-describedby="phone-err"
+        />
+        <app-field-error
+          id="phone-err"
+          [control]="form.controls.phone"
+          [server]="serverFields()['phone']"
+          patternKey="validation.phoneFormat"
+        />
+      </div>
+      <div class="field">
+        <label for="email"
+          >{{ 'common.email' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input
+          id="email"
+          type="email"
+          formControlName="email"
+          dir="ltr"
+          aria-describedby="email-err"
+        />
+        <app-field-error
+          id="email-err"
+          [control]="form.controls.email"
+          [server]="serverFields()['email']"
+        />
+      </div>
+      <div class="field">
+        <label for="website"
+          >{{ 'companies.website' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input id="website" formControlName="website" dir="ltr" aria-describedby="website-err" />
+        <app-field-error
+          id="website-err"
+          [control]="form.controls.website"
+          [server]="serverFields()['website']"
+          patternKey="companies.websiteFormat"
+        />
+      </div>
+      @if (auth.isAdmin()) {
+        <div class="field">
+          <label for="ownerId">{{ 'companies.accountManager' | t }}</label>
+          <select id="ownerId" formControlName="ownerId">
+            <option value="">{{ 'common.me' | t }}</option>
+            @for (m of team.value() ?? []; track m.id) {
+              <option [value]="'' + m.id">{{ m.fullName }}</option>
+            }
+          </select>
+        </div>
+      }
+      <div class="field form-grid--full">
+        <label for="notes"
+          >{{ 'common.notes' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <textarea id="notes" rows="3" formControlName="notes"></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <a class="btn" [routerLink]="isEdit() ? ['/companies', id()] : '/companies'">{{
+        'common.cancel' | t
+      }}</a>
+      <button
+        type="submit"
+        class="btn btn--primary"
+        [disabled]="saving()"
+        data-testid="save-company"
+      >
+        {{ (saving() ? 'common.saving' : 'common.save') | t }}
+      </button>
+    </div>
+  </form>
+}

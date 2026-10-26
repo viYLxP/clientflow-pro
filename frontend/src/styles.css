@@ -1,0 +1,1221 @@
+/*
+ * Global styles: design tokens, layout, and reusable component classes.
+ * التنسيقات العامة: متغيرات التصميم، التخطيط، وكلاسات المكوّنات القابلة لإعادة الاستخدام.
+ *
+ * Direction rule: we use CSS logical properties (margin-inline-start, inset-inline-end, text-align: start...)
+ * instead of left/right, so the same CSS works for Arabic (RTL) and English (LTR).
+ * قاعدة الاتجاه: نستخدم خصائص CSS المنطقية بدل left/right، فنفس التنسيق يشتغل للعربي (RTL) والإنجليزي (LTR).
+ */
+
+/* ---------- Design tokens (light blue "C1" theme) / متغيرات التصميم (ثيم فاتح أزرق "C1") ---------- */
+:root {
+  --font-latin: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-arabic: 'Almarai', 'Segoe UI', Tahoma, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --c-bg: #f6f8fc;
+  --c-surface: #ffffff;
+  --c-surface-2: #f1f4f9;
+  --c-input: #ffffff;
+  --c-border: #e3e8f0;
+  --c-border-strong: #cfd7e3;
+  --c-text: #0b1b33;
+  --c-muted: #5a6a82;
+  --c-primary: #2563eb;
+  --c-primary-hover: #1d4ed8;
+  --c-primary-soft: #e8efff;
+  --c-on-primary: #ffffff;
+  /* Status colours are dark enough for 4.5:1 text contrast on their soft backgrounds (WCAG AA). */
+  /* ألوان الحالات غامقة بما يكفي لتباين 4.5:1 للنص فوق خلفياتها الفاتحة (WCAG AA). */
+  --c-success: #047857;
+  --c-success-soft: #e6f6ef;
+  --c-warning: #b45309;
+  --c-warning-soft: #fff4e0;
+  --c-danger: #c81e1e;
+  --c-danger-soft: #fdecec;
+  --c-info: #1d4ed8;
+  --c-info-soft: #e8efff;
+  --shadow: 0 1px 2px rgb(15 34 64 / 6%), 0 4px 14px rgb(15 34 64 / 5%);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --sidebar-w: 248px;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  margin: 0;
+  background: var(--c-bg);
+  color: var(--c-text);
+  font: 15px/1.55 var(--font-latin);
+}
+/* Arabic gets an Arabic-first font stack and slightly larger text, which reads better. */
+/* العربي ياخذ خطوط عربية أولًا وحجم أكبر شوي، وهذا أريح للقراءة. */
+html[lang='ar'] body {
+  font-family: var(--font-arabic);
+  font-size: 15.5px;
+}
+h1,
+h2,
+h3 {
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.5rem;
+}
+h2 {
+  font-size: 1.1rem;
+}
+a {
+  color: var(--c-primary);
+}
+p {
+  margin: 0 0 0.75rem;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.muted {
+  color: var(--c-muted);
+}
+.hint {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  margin: 0.35rem 0 0;
+}
+/* Numbers use tabular digits so amounts line up in columns; usernames and codes use a monospace font. */
+/* الأرقام بخانات متساوية العرض حتى تتراصف المبالغ؛ وأسماء المستخدمين والرموز بخط ثابت العرض. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.sku,
+.mono {
+  font-family: var(--font-mono);
+}
+.sku {
+  font-size: 0.85rem;
+  color: var(--c-muted);
+  unicode-bidi: isolate;
+}
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: 1rem;
+  top: -3rem;
+  z-index: 100;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+/* ---------- Icons / الأيقونات ---------- */
+.icon {
+  display: inline-flex;
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  vertical-align: -0.2em;
+}
+.icon svg {
+  width: 100%;
+  height: 100%;
+}
+/* Direction-dependent icons mirror in RTL. Back arrows are mirrored once more. */
+/* الأيقونات المرتبطة بالاتجاه تنعكس في RTL، وأسهم الرجوع تنعكس مرة إضافية. */
+[dir='rtl'] .icon--flip svg {
+  transform: scaleX(-1);
+}
+.icon--back svg {
+  transform: scaleX(-1);
+}
+[dir='rtl'] .icon--flip.icon--back svg {
+  transform: none;
+}
+
+/* ---------- Layout / التخطيط ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: 100vh;
+}
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--c-surface);
+  border-inline-end: 1px solid var(--c-border);
+  padding: 1rem 0.75rem;
+}
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.25rem 0.5rem 1rem;
+}
+.sidebar__brand small {
+  display: block;
+  color: var(--c-muted);
+  font-size: 0.78rem;
+}
+/* Scoped selectors so the later .icon-btn { display: inline-grid } rule cannot re-show these on desktop. */
+/* محددات أدق حتى قاعدة .icon-btn اللاحقة ما ترجّع إظهار هذي الأزرار في الكمبيوتر. */
+.sidebar .sidebar__close {
+  display: none;
+  margin-inline-start: auto;
+}
+.logo {
+  display: inline-grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+.nav-section {
+  margin: 1rem 0.6rem 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-sm);
+  color: var(--c-muted);
+  text-decoration: none;
+  border-inline-start: 2px solid transparent;
+}
+.nav-link:hover {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+}
+.nav-link--active {
+  background: var(--c-primary-soft);
+  border-inline-start-color: var(--c-primary);
+  color: var(--c-primary-hover);
+}
+.main-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background: rgb(246 248 252 / 90%);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--c-border);
+}
+.topbar .topbar__menu {
+  display: none;
+}
+.topbar__spacer {
+  flex: 1;
+}
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.user-chip__text {
+  display: grid;
+  line-height: 1.2;
+}
+.user-chip__text small {
+  color: var(--c-muted);
+  font-size: 0.75rem;
+}
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  font-weight: 600;
+}
+.content {
+  padding: 1.5rem;
+  max-width: 1280px;
+  width: 100%;
+}
+.content:focus {
+  outline: none;
+}
+.backdrop {
+  display: none;
+}
+
+/* Mobile: the sidebar becomes an off-canvas drawer that slides in from the reading-start side. */
+/* الجوال: القائمة الجانبية تصير درج منزلق يطلع من جهة بداية القراءة. */
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 50;
+    width: min(84vw, 300px);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    visibility: hidden;
+  }
+  [dir='rtl'] .sidebar {
+    transform: translateX(100%);
+  }
+  .layout--menu-open .sidebar {
+    transform: none;
+    visibility: visible;
+  }
+  .layout--menu-open .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgb(11 27 51 / 40%);
+  }
+  .sidebar .sidebar__close,
+  .topbar .topbar__menu {
+    display: inline-grid;
+  }
+  .topbar {
+    padding: 0.5rem 1rem;
+  }
+  .user-chip__text {
+    display: none;
+  }
+  .content {
+    padding: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
+}
+
+/* ---------- Page header / رأس الصفحة ---------- */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.page-header p {
+  color: var(--c-muted);
+  margin: 0;
+}
+.page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--c-muted);
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+.breadcrumb:hover {
+  color: var(--c-text);
+}
+
+/* ---------- Cards & stats / البطاقات والإحصائيات ---------- */
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+/* Stacked cards get a gap; cards inside a grid already have the grid gap, so the margin would misalign them. */
+/* البطاقات المتتالية تاخذ مسافة؛ أما داخل الشبكة فالـ gap يكفي، والهامش كان بيخلي البطاقات غير متساوية. */
+.card + .card {
+  margin-top: 1rem;
+}
+.grid > .card + .card {
+  margin-top: 0;
+}
+/* <bdi> wraps user-entered names: a Latin name such as "Gulf Cleaning Co." inside Arabic text keeps its
+   trailing dot in place, and vice versa. */
+/* <bdi> يغلّف الأسماء اللي يدخلها المستخدم: اسم لاتيني مثل "Gulf Cleaning Co." داخل نص عربي تبقى نقطته
+   بمكانها الصحيح، والعكس كذلك. */
+.card__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+.card__header h2 {
+  margin: 0;
+}
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+.grid--stats {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 1rem;
+}
+.grid--2 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  border-top: 3px solid var(--c-primary);
+}
+.stat-card__label {
+  color: var(--c-muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.35rem;
+}
+.stat-card__value {
+  font-size: 1.55rem;
+  font-weight: 600;
+  margin: 0;
+}
+.stat-card__sub {
+  color: var(--c-muted);
+  font-size: 0.82rem;
+  margin: 0.25rem 0 0;
+}
+.stat-card--warn {
+  border-top-color: var(--c-warning);
+}
+.stat-card--danger {
+  border-top-color: var(--c-danger);
+}
+.detail-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5rem 1.25rem;
+  margin: 0;
+}
+.detail-list dt {
+  color: var(--c-muted);
+}
+.detail-list dd {
+  margin: 0;
+}
+
+/* ---------- Buttons / الأزرار ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-surface-2);
+  color: var(--c-text);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+  border-color: var(--c-border-strong);
+  background: var(--c-surface-2);
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: 600;
+}
+.btn--primary:hover:not(:disabled) {
+  background: var(--c-primary-hover);
+  border-color: var(--c-primary-hover);
+}
+.btn--danger {
+  background: var(--c-danger-soft);
+  border-color: rgb(200 30 30 / 30%);
+  color: var(--c-danger);
+}
+.btn--danger:hover:not(:disabled) {
+  background: rgb(248 113 113 / 22%);
+}
+.btn--small {
+  min-height: 2rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.88rem;
+}
+.btn--block {
+  width: 100%;
+}
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+}
+.icon-btn:hover {
+  color: var(--c-text);
+  background: var(--c-surface-2);
+}
+.icon-btn--danger:hover {
+  color: var(--c-danger);
+}
+.lang-switch {
+  font-weight: 600;
+}
+
+/* ---------- Forms / النماذج ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 1rem 1.25rem;
+}
+.form-grid--full {
+  grid-column: 1 / -1;
+}
+.field {
+  display: grid;
+  gap: 0.35rem;
+  align-content: start;
+}
+.field label,
+.field__label {
+  font-weight: 500;
+  font-size: 0.92rem;
+}
+.field label small {
+  color: var(--c-muted);
+  font-weight: 400;
+}
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--c-input);
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  text-align: start;
+}
+textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--c-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--c-primary-soft);
+}
+input.ng-invalid.ng-touched,
+select.ng-invalid.ng-touched,
+textarea.ng-invalid.ng-touched,
+[aria-invalid='true'] {
+  border-color: var(--c-danger);
+}
+input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 0;
+  accent-color: var(--c-primary);
+}
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+/* Codes, emails and phone numbers stay left-to-right even inside Arabic forms. */
+/* الرموز والإيميلات وأرقام الجوال تبقى من اليسار لليمين حتى داخل النماذج العربية. */
+input[dir='ltr'] {
+  text-align: left;
+}
+[dir='rtl'] input[dir='ltr'] {
+  text-align: right;
+}
+.field__error {
+  color: var(--c-danger);
+  font-size: 0.84rem;
+  margin: 0;
+}
+.input-group {
+  display: flex;
+  gap: 0.35rem;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--c-border);
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.toolbar > * {
+  flex: 1 1 180px;
+}
+.toolbar .search {
+  flex: 3 1 260px;
+  position: relative;
+}
+.toolbar .checkbox {
+  flex: 0 0 auto;
+}
+/* Date filters keep a visible label ("From"/"To"), since a bare date box is ambiguous. */
+/* فلاتر التاريخ تحتفظ بعنوان ظاهر ("من"/"إلى")، لأن خانة التاريخ لوحدها غامضة. */
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.date-filter input {
+  flex: 1;
+}
+
+/* ---------- Tables / الجداول ---------- */
+/* Wide tables scroll horizontally inside their card instead of breaking the page on phones. */
+/* الجداول العريضة تتمرر أفقيًا داخل البطاقة بدل ما تكسر الصفحة في الجوال. */
+.table-wrap {
+  /* position: relative makes this the containing block for absolutely positioned children (the
+     .visually-hidden labels in headers and cells); otherwise they escape the scroll box and widen the
+     whole page on phones. */
+  /* position: relative يخلي هذا العنصر هو المرجع للعناصر المطلقة بداخله (عناوين .visually-hidden في الجدول)؛
+     وإلا تطلع برا صندوق التمرير وتوسّع الصفحة كاملة في الجوال. */
+  position: relative;
+  overflow-x: auto;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.93rem;
+}
+th,
+td {
+  padding: 0.65rem 0.8rem;
+  text-align: start;
+  border-bottom: 1px solid var(--c-border);
+  white-space: nowrap;
+}
+th {
+  color: var(--c-muted);
+  font-weight: 500;
+  font-size: 0.82rem;
+  background: var(--c-surface-2);
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+tbody tr:hover {
+  background: rgb(37 99 235 / 3%);
+}
+td.wrap {
+  white-space: normal;
+  min-width: 12rem;
+}
+.cell-end,
+th.cell-end {
+  text-align: end;
+}
+/* Cells marked dir="ltr" (numbers, SKUs, order numbers) would otherwise align by their own direction and drift
+   away from their Arabic column header; keep them aligned with the page direction instead. */
+/* الخلايا اللي عليها dir="ltr" (أرقام، رموز، أرقام طلبات) كانت بتتحاذى حسب اتجاهها الخاص وتبعد عن عنوان
+   العمود العربي؛ فنخليها تتحاذى مع اتجاه الصفحة. */
+[dir='rtl'] td[dir='ltr'],
+[dir='rtl'] div.sku[dir='ltr'] {
+  text-align: right;
+}
+[dir='rtl'] td.cell-end[dir='ltr'] {
+  text-align: left;
+}
+.row-link {
+  color: var(--c-text);
+  text-decoration: none;
+  font-weight: 500;
+}
+.row-link:hover {
+  color: var(--c-primary-hover);
+  text-decoration: underline;
+}
+.row-actions {
+  display: flex;
+  gap: 0.15rem;
+  justify-content: flex-end;
+}
+.table-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  color: var(--c-muted);
+  font-size: 0.88rem;
+}
+
+/* ---------- Badges / الشارات ---------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+  border: 1px solid var(--c-border);
+}
+.badge--WON,
+.badge--DONE,
+.badge--LOW {
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  border-color: transparent;
+}
+.badge--NEGOTIATION,
+.badge--MEDIUM {
+  background: var(--c-warning-soft);
+  color: var(--c-warning);
+  border-color: transparent;
+}
+.badge--LOST,
+.badge--HIGH,
+.badge--overdue {
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  border-color: transparent;
+}
+.badge--PROPOSAL,
+.badge--QUALIFIED {
+  background: var(--c-primary-soft);
+  color: var(--c-primary-hover);
+  border-color: transparent;
+}
+.badge--info {
+  background: var(--c-info-soft);
+  color: var(--c-info);
+  border-color: transparent;
+}
+/* ---------- Alerts, empty & loading states / التنبيهات والحالات الفارغة والتحميل ---------- */
+.alert {
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid;
+  margin: 0 0 1rem;
+}
+.alert--danger {
+  background: var(--c-danger-soft);
+  border-color: rgb(200 30 30 / 30%);
+  color: var(--c-danger);
+}
+.alert--warning {
+  background: var(--c-warning-soft);
+  border-color: rgb(180 83 9 / 30%);
+  color: var(--c-warning);
+}
+.alert--info {
+  background: var(--c-info-soft);
+  border-color: rgb(29 78 216 / 25%);
+  color: var(--c-info);
+}
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--c-muted);
+}
+.empty-state--page {
+  padding: 4rem 1rem;
+}
+.empty-state h1 {
+  color: var(--c-text);
+}
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  color: var(--c-muted);
+}
+.spinner {
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid var(--c-border);
+  border-top-color: var(--c-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.skeleton {
+  height: 1rem;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, #eef2f8, #e3e8f0, #eef2f8);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* ---------- Pagination / الصفحات ---------- */
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ---------- Dialogs / النوافذ ---------- */
+.dialog {
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 1.35rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  background: var(--c-surface);
+  color: var(--c-text);
+}
+.dialog--small {
+  width: min(420px, calc(100vw - 2rem));
+}
+.dialog::backdrop {
+  background: rgb(11 27 51 / 45%);
+}
+.dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+/* ---------- Toasts / الإشعارات ---------- */
+.toasts {
+  position: fixed;
+  inset-block-end: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 200;
+  display: grid;
+  gap: 0.5rem;
+  width: min(380px, calc(100vw - 2rem));
+}
+.toast {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  box-shadow: 0 10px 30px rgb(15 34 64 / 15%);
+}
+.toast--error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
+}
+.toast .icon-btn {
+  width: 1.6rem;
+  height: 1.6rem;
+  color: inherit;
+}
+
+/* ---------- Login / تسجيل الدخول ---------- */
+.auth-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem 1rem;
+  background:
+    radial-gradient(60% 50% at 50% 0%, rgb(37 99 235 / 12%), transparent 70%), var(--c-bg);
+  position: relative;
+}
+.auth-page__lang {
+  position: absolute;
+  top: 1rem;
+  inset-inline-end: 1rem;
+}
+.auth-card {
+  width: min(400px, 100%);
+  display: grid;
+  gap: 1rem;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+}
+.auth-card h1 {
+  margin: 0;
+}
+.auth-card .muted {
+  margin: -0.5rem 0 0;
+}
+.auth-card__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* ---------- Dashboard stage chart (horizontal bars) / رسم المراحل في اللوحة (أعمدة أفقية) ---------- */
+/* Horizontal bars keep long Arabic stage names readable on phones, unlike narrow vertical columns. */
+/* الأعمدة الأفقية تخلي أسماء المراحل العربية الطويلة مقروءة في الجوال، بعكس الأعمدة العمودية الضيقة. */
+.hbars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.hbar {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+.hbar__track {
+  display: block;
+  height: 0.7rem;
+  background: var(--c-surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.hbar__fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  background: var(--c-primary);
+  border-radius: 999px;
+}
+.hbar__value {
+  font-size: 0.85rem;
+  text-align: end;
+  white-space: nowrap;
+}
+.scope-switch {
+  display: inline-flex;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  padding: 0.2rem;
+  background: var(--c-surface);
+}
+.scope-switch button {
+  border: 0;
+  background: transparent;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--c-muted);
+}
+.scope-switch button[aria-pressed='true'] {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.list li:last-child {
+  border-bottom: 0;
+}
+.list__main {
+  min-width: 0;
+}
+/* SKU on its own line under the product name. / رمز المنتج في سطر مستقل تحت اسم المنتج. */
+.list__main .sku {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--c-muted);
+}
+.list__main strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Pipeline board / لوحة خط المبيعات ---------- */
+/* Columns scroll sideways inside the board only, so the page itself never scrolls horizontally on phones. */
+/* الأعمدة تتمرر جانبيًا داخل اللوحة فقط، فالصفحة نفسها ما تتمرر أفقيًا في الجوال. */
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(230px, 1fr);
+  gap: 1rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  position: relative;
+}
+.board__col {
+  background: var(--c-surface-2);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  min-width: 0;
+}
+.board__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.board__head h2 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.board__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+.deal-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.75rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 0.35rem;
+}
+.deal-card__title {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--c-text);
+}
+.deal-card__title:hover {
+  color: var(--c-primary);
+}
+.deal-card__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--c-muted);
+}
+.deal-card__actions {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+.deal-card__actions select {
+  flex: 1 1 8rem;
+  min-width: 0;
+  padding-block: 0.3rem;
+  font-size: 0.85rem;
+}
+
+/* ---------- Stage stepper / مؤشر مراحل الصفقة ---------- */
+.stepper {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+.stepper li {
+  padding: 0.45rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+  font-size: 0.82rem;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stepper li.is-done {
+  background: var(--c-primary-soft);
+  color: var(--c-primary-hover);
+}
+.stepper li[aria-current='step'] {
+  background: var(--c-primary);
+  color: var(--c-on-primary);
+  font-weight: 700;
+}
+.stepper li.is-won[aria-current='step'] {
+  background: var(--c-success);
+}
+.stepper li.is-lost[aria-current='step'] {
+  background: var(--c-danger);
+}
+
+/* ---------- Activity timeline / سجل التواصل ---------- */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.timeline li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.timeline li:last-child {
+  border-bottom: 0;
+}
+.timeline__icon {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--c-primary-soft);
+  color: var(--c-primary);
+}
+.timeline__body {
+  min-width: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.timeline__meta {
+  font-size: 0.8rem;
+  color: var(--c-muted);
+}
+.task-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.task-row__main {
+  flex: 1;
+  min-width: 0;
+}
+.task-row--done .task-row__title {
+  text-decoration: line-through;
+  color: var(--c-muted);
+}
+.overdue {
+  color: var(--c-danger);
+  font-weight: 600;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.list__sub {
+  display: block;
+  text-align: end;
+}
+.section-gap {
+  margin-top: 1rem;
+}
+/* Phones: two stat cards per row with a smaller figure, so the numbers are visible without scrolling. */
+/* الجوال: بطاقتين في كل صف بخط أصغر، حتى تبان الأرقام بدون تمرير. */
+@media (max-width: 600px) {
+  .grid--stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+  }
+  .stat-card {
+    padding: 0.8rem;
+  }
+  .stat-card__value {
+    font-size: 1.05rem;
+    overflow-wrap: anywhere;
+  }
+}

@@ -1,0 +1,99 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'companies.title' | t }}</h1>
+    <p>{{ 'companies.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <a class="btn btn--primary" routerLink="/companies/new" data-testid="new-company"
+      ><app-icon name="plus" /> {{ 'companies.new' | t }}</a
+    >
+  </div>
+</header>
+
+<div class="toolbar" role="search">
+  <div class="search">
+    <label class="visually-hidden" for="company-search">{{ 'common.search' | t }}</label>
+    <input
+      id="company-search"
+      type="search"
+      [value]="searchText()"
+      (input)="onSearch($any($event.target).value)"
+      [placeholder]="'companies.searchPlaceholder' | t"
+    />
+  </div>
+  <div>
+    <label class="visually-hidden" for="company-owner">{{ 'companies.accountManager' | t }}</label>
+    <select id="company-owner" (change)="setFilter({ ownerId: $any($event.target).value || null })">
+      <option value="">{{ 'common.anyOwner' | t }}</option>
+      @for (m of team.value() ?? []; track m.id) {
+        <option [value]="m.id" [selected]="'' + m.id === ownerId()">{{ m.fullName }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="companies.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (companies.isLoading() && !companies.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (companies.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ (hasFilters() ? 'common.noResults' : 'common.empty') | t }}</p>
+      @if (hasFilters()) {
+        <button type="button" class="btn" (click)="clearFilters()">
+          {{ 'common.clearFilters' | t }}
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="companies.isLoading()">
+      <table data-testid="companies-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'common.name' | t }}</th>
+            <th scope="col">{{ 'common.city' | t }}</th>
+            <th scope="col">{{ 'companies.accountManager' | t }}</th>
+            <th scope="col">{{ 'common.phone' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of result.content; track c.id) {
+            <tr>
+              <td class="wrap">
+                <a class="row-link" [routerLink]="['/companies', c.id]"
+                  ><bdi>{{ c.name }}</bdi></a
+                >
+                @if (c.industry) {
+                  <div class="muted">
+                    <bdi>{{ c.industry }}</bdi>
+                  </div>
+                }
+              </td>
+              <td>
+                <bdi>{{ c.city ?? '—' }}</bdi>
+              </td>
+              <td>
+                <bdi>{{ c.owner.fullName }}</bdi>
+              </td>
+              <td dir="ltr">{{ c.phone ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-foot">
+      <span>{{ 'common.showing' | t: { count: result.totalElements } }}</span>
+      <app-pagination
+        [page]="result.page"
+        [totalPages]="result.totalPages"
+        (pageChange)="setFilter({ page: $event })"
+      />
+    </div>
+  }
+}

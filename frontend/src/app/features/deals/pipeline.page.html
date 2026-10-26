@@ -1,0 +1,126 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'pipeline.title' | t }}</h1>
+    <p>{{ 'pipeline.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <div class="scope-switch" role="group" [attr.aria-label]="'dashboard.scope' | t">
+      <button type="button" [attr.aria-pressed]="mine()" (click)="setScope(true)">
+        {{ 'common.mine' | t }}
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="!mine()"
+        (click)="setScope(false)"
+        data-testid="scope-team"
+      >
+        {{ 'common.team' | t }}
+      </button>
+    </div>
+    <a class="btn btn--primary" routerLink="/deals/new" data-testid="new-deal"
+      ><app-icon name="plus" /> {{ 'deals.new' | t }}</a
+    >
+  </div>
+</header>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="board.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (board.isLoading() && !board.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (board.value(); as columns) {
+  <div class="board" [attr.aria-busy]="board.isLoading()" data-testid="board">
+    @for (col of columns; track col.stage) {
+      <section
+        class="board__col"
+        [attr.aria-labelledby]="'col-' + col.stage"
+        [attr.data-stage]="col.stage"
+      >
+        <div class="board__head">
+          <h2 [id]="'col-' + col.stage">
+            {{ 'stage.' + col.stage | t }}
+            <small class="muted">({{ fmt.number(col.count) }})</small>
+          </h2>
+          <span class="muted num">{{ fmt.money(col.amount) }}</span>
+        </div>
+        <ul class="board__cards">
+          @for (deal of col.deals; track deal.id) {
+            <li class="deal-card" data-testid="deal-card">
+              <a class="deal-card__title" [routerLink]="['/deals', deal.id]"
+                ><bdi>{{ deal.title }}</bdi></a
+              >
+              <div class="deal-card__meta">
+                <bdi>{{ deal.company.name }}</bdi>
+                <strong class="num">{{ fmt.money(deal.amount) }}</strong>
+              </div>
+              <div class="deal-card__meta">
+                <bdi>{{ deal.owner.fullName }}</bdi>
+                @if (deal.expectedCloseDate) {
+                  <span
+                    [class.overdue]="deal.expectedCloseDate < today"
+                    [attr.title]="
+                      deal.expectedCloseDate < today ? ('deals.overdueClose' | t) : null
+                    "
+                    >{{ fmt.day(deal.expectedCloseDate) }}</span
+                  >
+                }
+              </div>
+              @if (canMove(deal)) {
+                <div class="deal-card__actions">
+                  <label class="visually-hidden" [for]="'move-' + deal.id">{{
+                    'pipeline.moveLabel' | t: { title: deal.title }
+                  }}</label>
+                  <select
+                    #moveSelect
+                    [id]="'move-' + deal.id"
+                    (change)="move(deal, moveSelect.value, moveSelect)"
+                    data-testid="move-select"
+                  >
+                    <option value="">{{ 'pipeline.moveTo' | t }}…</option>
+                    @for (s of stages; track s) {
+                      @if (s !== deal.stage) {
+                        <option [value]="s">{{ 'stage.' + s | t }}</option>
+                      }
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="btn btn--small"
+                    (click)="move(deal, 'WON')"
+                    [attr.aria-label]="('deals.markWon' | t) + ': ' + deal.title"
+                    data-testid="win"
+                  >
+                    <app-icon name="check" /> {{ 'pipeline.win' | t }}
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--small btn--danger"
+                    (click)="move(deal, 'LOST')"
+                    [attr.aria-label]="('deals.markLost' | t) + ': ' + deal.title"
+                    data-testid="lose"
+                  >
+                    <app-icon name="x" /> {{ 'pipeline.lose' | t }}
+                  </button>
+                </div>
+              }
+            </li>
+          } @empty {
+            <li class="muted">{{ 'pipeline.emptyColumn' | t }}</li>
+          }
+        </ul>
+        @if (col.count > col.deals.length) {
+          <a
+            class="btn btn--small btn--block"
+            routerLink="/deals"
+            [queryParams]="{ stage: col.stage }"
+            >{{ 'pipeline.moreInColumn' | t: { count: col.count - col.deals.length } }}</a
+          >
+        }
+      </section>
+    }
+  </div>
+}

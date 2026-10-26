@@ -1,0 +1,167 @@
+<a class="breadcrumb" routerLink="/companies">
+  <app-icon name="chevron" class="icon--back" [flip]="true" /> {{ 'nav.companies' | t }}
+</a>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">{{ errorText() }}</div>
+} @else if (detail.isLoading() && !detail.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (detail.value(); as d) {
+  <header class="page-header">
+    <div>
+      <h1 data-testid="company-name">
+        <bdi>{{ d.company.name }}</bdi>
+      </h1>
+      <p>
+        @if (d.company.industry) {
+          <bdi>{{ d.company.industry }}</bdi> ·
+        }
+        @if (d.company.city) {
+          <bdi>{{ d.company.city }}</bdi> ·
+        }
+        {{ 'companies.accountManager' | t }}: <bdi>{{ d.company.owner.fullName }}</bdi>
+      </p>
+    </div>
+    <div class="page-header__actions">
+      <a
+        class="btn btn--primary"
+        routerLink="/deals/new"
+        [queryParams]="{ companyId: d.company.id }"
+        ><app-icon name="plus" /> {{ 'deals.new' | t }}</a
+      >
+      @if (canEdit()) {
+        <a class="btn" [routerLink]="['/companies', d.company.id, 'edit']"
+          ><app-icon name="edit" /> {{ 'common.edit' | t }}</a
+        >
+      }
+      @if (auth.isAdmin()) {
+        <button
+          type="button"
+          class="btn btn--danger"
+          (click)="remove()"
+          data-testid="delete-company"
+        >
+          <app-icon name="trash" /> {{ 'common.delete' | t }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <div class="grid grid--stats">
+    <div class="card stat-card">
+      <span class="stat-card__label">{{ 'companies.contacts' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.number(d.contactCount) }}</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-card__label">{{ 'companies.openDeals' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.number(d.openDealCount) }}</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-card__label">{{ 'companies.openValue' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.openDealAmount) }}</span>
+    </div>
+    <div class="card stat-card">
+      <span class="stat-card__label">{{ 'companies.wonValue' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.wonAmount) }}</span>
+    </div>
+  </div>
+
+  <div class="split">
+    <div>
+      <section class="card" aria-labelledby="deals-title">
+        <h2 id="deals-title">{{ 'companies.deals' | t }}</h2>
+        <ul class="list">
+          @for (deal of deals.value()?.content ?? []; track deal.id) {
+            <li>
+              <span class="list__main">
+                <strong
+                  ><a [routerLink]="['/deals', deal.id]"
+                    ><bdi>{{ deal.title }}</bdi></a
+                  ></strong
+                >
+                <span class="muted"
+                  ><bdi>{{ deal.owner.fullName }}</bdi></span
+                >
+              </span>
+              <span>
+                <span [class]="'badge badge--' + deal.stage">{{ 'stage.' + deal.stage | t }}</span>
+                <span class="num list__sub">{{ fmt.money(deal.amount) }}</span>
+              </span>
+            </li>
+          } @empty {
+            <li class="muted">{{ 'companies.noDeals' | t }}</li>
+          }
+        </ul>
+      </section>
+      <div class="section-gap">
+        <app-activity-timeline [companyId]="companyId()" [showDeal]="true" />
+      </div>
+    </div>
+    <div>
+      <section class="card" aria-labelledby="info-title">
+        <h2 id="info-title" class="visually-hidden">{{ 'companies.title' | t }}</h2>
+        <dl class="detail-list">
+          <dt>{{ 'common.phone' | t }}</dt>
+          <dd dir="ltr">{{ d.company.phone ?? '—' }}</dd>
+          <dt>{{ 'common.email' | t }}</dt>
+          <dd>
+            @if (d.company.email) {
+              <a [href]="'mailto:' + d.company.email" dir="ltr">{{ d.company.email }}</a>
+            } @else {
+              —
+            }
+          </dd>
+          <dt>{{ 'companies.website' | t }}</dt>
+          <dd>
+            @if (websiteLink(); as href) {
+              <a [href]="href" target="_blank" rel="noopener noreferrer" dir="ltr">{{
+                d.company.website
+              }}</a>
+            } @else {
+              —
+            }
+          </dd>
+          @if (d.company.notes) {
+            <dt>{{ 'common.notes' | t }}</dt>
+            <dd class="timeline__body">
+              <bdi>{{ d.company.notes }}</bdi>
+            </dd>
+          }
+        </dl>
+      </section>
+      <section class="card section-gap" aria-labelledby="people-title">
+        <div class="card__header">
+          <h2 id="people-title">{{ 'companies.contacts' | t }}</h2>
+          <a
+            class="btn btn--small"
+            routerLink="/contacts"
+            [queryParams]="{ companyId: d.company.id }"
+            >{{ 'common.viewAll' | t }}</a
+          >
+        </div>
+        <ul class="list">
+          @for (c of contacts.value()?.content ?? []; track c.id) {
+            <li>
+              <span class="list__main">
+                <strong
+                  ><bdi>{{ c.fullName }}</bdi></strong
+                >
+                <span class="muted"
+                  ><bdi>{{ c.jobTitle ?? '' }}</bdi></span
+                >
+              </span>
+              @if (c.phone) {
+                <a [href]="'tel:' + c.phone" dir="ltr">{{ c.phone }}</a>
+              }
+            </li>
+          } @empty {
+            <li class="muted">{{ 'companies.noContacts' | t }}</li>
+          }
+        </ul>
+      </section>
+      <div class="section-gap">
+        <app-task-panel [companyId]="companyId()" />
+      </div>
+    </div>
+  </div>
+}

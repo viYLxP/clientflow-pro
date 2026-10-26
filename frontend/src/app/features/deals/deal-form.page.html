@@ -1,0 +1,115 @@
+<a class="breadcrumb" [routerLink]="isEdit() ? ['/deals', id()] : '/deals'">
+  <app-icon name="chevron" class="icon--back" [flip]="true" /> {{ 'common.back' | t }}
+</a>
+<header class="page-header">
+  <div>
+    <h1>{{ (isEdit() ? 'deals.edit' : 'deals.new') | t }}</h1>
+  </div>
+</header>
+
+@if (isEdit() && deal.isLoading()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (isEdit() && deal.error()) {
+  <div class="alert alert--danger" role="alert">{{ 'errors.NOT_FOUND' | t }}</div>
+} @else if (closed()) {
+  <div class="alert alert--info" role="status">{{ 'deals.closedHint' | t }}</div>
+} @else if (readOnly()) {
+  <div class="alert alert--info" role="status">{{ 'common.readOnlyHint' | t }}</div>
+} @else {
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    @if (errorText()) {
+      <div class="alert alert--danger" role="alert" data-testid="form-error">{{ errorText() }}</div>
+    }
+    <div class="form-grid">
+      <div class="field form-grid--full">
+        <label for="title">{{ 'deals.dealTitle' | t }}</label>
+        <input id="title" formControlName="title" aria-describedby="title-err" />
+        <app-field-error
+          id="title-err"
+          [control]="form.controls.title"
+          [server]="serverFields()['title']"
+        />
+      </div>
+      <div class="field">
+        <label for="companyId">{{ 'deals.company' | t }}</label>
+        <select id="companyId" formControlName="companyId" aria-describedby="company-err">
+          <option value="" disabled>{{ 'common.choose' | t }}</option>
+          @for (c of companies.value()?.content ?? []; track c.id) {
+            <option [value]="'' + c.id">{{ c.name }}</option>
+          }
+        </select>
+        <app-field-error
+          id="company-err"
+          [control]="form.controls.companyId"
+          [server]="serverFields()['companyId']"
+        />
+      </div>
+      <div class="field">
+        <label for="contactId"
+          >{{ 'deals.contact' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <select id="contactId" formControlName="contactId" aria-describedby="contact-hint">
+          <option value="">{{ 'deals.noContact' | t }}</option>
+          @for (c of contacts.value()?.content ?? []; track c.id) {
+            <option [value]="'' + c.id">{{ c.fullName }}</option>
+          }
+        </select>
+        <p class="hint" id="contact-hint">{{ 'deals.contactHint' | t }}</p>
+      </div>
+      <div class="field">
+        <label for="amount">{{ 'deals.amount' | t }}</label>
+        <input
+          id="amount"
+          formControlName="amount"
+          inputmode="decimal"
+          dir="ltr"
+          autocomplete="off"
+          aria-describedby="amount-err"
+        />
+        <app-field-error
+          id="amount-err"
+          [control]="form.controls.amount"
+          [server]="serverFields()['amount']"
+          patternKey="validation.Digits"
+        />
+      </div>
+      <div class="field">
+        <label for="expectedCloseDate"
+          >{{ 'deals.expectedClose' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input id="expectedCloseDate" type="date" formControlName="expectedCloseDate" />
+      </div>
+      @if (!isEdit()) {
+        <div class="field">
+          <label for="stage">{{ 'deals.startStage' | t }}</label>
+          <select id="stage" formControlName="stage">
+            @for (s of stages; track s) {
+              <option [value]="s">{{ 'stage.' + s | t }}</option>
+            }
+          </select>
+        </div>
+      }
+      <!-- Only admins assign deals to other reps; the server enforces the same rule. -->
+      <!-- المدير فقط يعيّن الصفقات لمندوبين آخرين؛ والخادم يفرض نفس القاعدة. -->
+      @if (auth.isAdmin()) {
+        <div class="field">
+          <label for="ownerId">{{ 'common.owner' | t }}</label>
+          <select id="ownerId" formControlName="ownerId">
+            <option value="">{{ 'common.me' | t }}</option>
+            @for (m of team.value() ?? []; track m.id) {
+              <option [value]="'' + m.id">{{ m.fullName }}</option>
+            }
+          </select>
+        </div>
+      }
+    </div>
+    <div class="form-actions">
+      <a class="btn" [routerLink]="isEdit() ? ['/deals', id()] : '/deals'">{{
+        'common.cancel' | t
+      }}</a>
+      <button type="submit" class="btn btn--primary" [disabled]="saving()" data-testid="save-deal">
+        {{ (saving() ? 'common.saving' : 'common.save') | t }}
+      </button>
+    </div>
+  </form>
+}

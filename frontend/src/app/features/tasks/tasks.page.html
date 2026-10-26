@@ -1,0 +1,174 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'tasks.title' | t }}</h1>
+    <p>{{ 'tasks.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <button
+      type="button"
+      class="btn btn--primary"
+      (click)="dialog().open(null)"
+      data-testid="new-task"
+    >
+      <app-icon name="plus" /> {{ 'tasks.new' | t }}
+    </button>
+  </div>
+</header>
+
+<div class="toolbar" role="search">
+  <div>
+    <label class="visually-hidden" for="task-assignee-filter">{{ 'tasks.assignee' | t }}</label>
+    <select
+      id="task-assignee-filter"
+      (change)="setFilter({ assignee: $any($event.target).value || null })"
+    >
+      <option value="">{{ 'tasks.mine' | t }}</option>
+      <option value="all" [selected]="assignee() === 'all'">{{ 'common.team' | t }}</option>
+      @for (m of team.value() ?? []; track m.id) {
+        <option [value]="m.id" [selected]="'' + m.id === assignee()">{{ m.fullName }}</option>
+      }
+    </select>
+  </div>
+  <div>
+    <label class="visually-hidden" for="task-due-filter">{{ 'tasks.due' | t }}</label>
+    <select id="task-due-filter" (change)="setFilter({ due: $any($event.target).value || null })">
+      <option value="">{{ 'tasks.anyDue' | t }}</option>
+      <option value="OVERDUE" [selected]="due() === 'OVERDUE'">{{ 'tasks.overdue' | t }}</option>
+      <option value="TODAY" [selected]="due() === 'TODAY'">{{ 'tasks.today' | t }}</option>
+      <option value="WEEK" [selected]="due() === 'WEEK'">{{ 'tasks.week' | t }}</option>
+    </select>
+  </div>
+  <div>
+    <label class="visually-hidden" for="task-status-filter">{{ 'common.status' | t }}</label>
+    <select
+      id="task-status-filter"
+      (change)="setFilter({ status: $any($event.target).value || null })"
+    >
+      <option value="">{{ 'taskStatus.OPEN' | t }}</option>
+      <option value="DONE" [selected]="status() === 'DONE'">{{ 'taskStatus.DONE' | t }}</option>
+      <option value="all" [selected]="status() === 'all'">{{ 'tasks.anyStatus' | t }}</option>
+    </select>
+  </div>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="tasks.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (tasks.isLoading() && !tasks.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (tasks.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ 'tasks.empty' | t }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="tasks.isLoading()">
+      <table data-testid="tasks-table">
+        <thead>
+          <tr>
+            <th scope="col">
+              <span class="visually-hidden">{{ 'common.status' | t }}</span>
+            </th>
+            <th scope="col">{{ 'tasks.taskTitle' | t }}</th>
+            <th scope="col">{{ 'tasks.dueDate' | t }}</th>
+            <th scope="col">{{ 'tasks.priority' | t }}</th>
+            <th scope="col">{{ 'tasks.assignee' | t }}</th>
+            <th scope="col" class="cell-end">
+              <span class="visually-hidden">{{ 'common.actions' | t }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (task of result.content; track task.id) {
+            <tr [class.task-row--done]="task.status === 'DONE'">
+              <td>
+                <button
+                  type="button"
+                  class="icon-btn"
+                  [disabled]="!canEdit(task)"
+                  (click)="toggle(task)"
+                  [attr.aria-pressed]="task.status === 'DONE'"
+                  [attr.aria-label]="
+                    (task.status === 'DONE' ? 'tasks.reopen' : 'tasks.complete')
+                      | t: { title: task.title }
+                  "
+                  data-testid="toggle-task"
+                >
+                  <app-icon [name]="task.status === 'DONE' ? 'checkSquare' : 'square'" />
+                </button>
+              </td>
+              <td class="wrap">
+                <span class="task-row__title"
+                  ><bdi>{{ task.title }}</bdi></span
+                >
+                @if (task.deal) {
+                  <div class="muted">
+                    <a [routerLink]="['/deals', task.deal.id]"
+                      ><bdi>{{ task.deal.title }}</bdi></a
+                    >
+                  </div>
+                } @else if (task.company) {
+                  <div class="muted">
+                    <a [routerLink]="['/companies', task.company.id]"
+                      ><bdi>{{ task.company.name }}</bdi></a
+                    >
+                  </div>
+                }
+              </td>
+              <td>
+                <span [class.overdue]="task.overdue">{{ fmt.day(task.dueDate) }}</span>
+                @if (task.overdue) {
+                  <span class="badge badge--overdue">{{ 'tasks.overdue' | t }}</span>
+                }
+              </td>
+              <td>
+                <span [class]="'badge badge--' + task.priority">{{
+                  'priority.' + task.priority | t
+                }}</span>
+              </td>
+              <td>
+                <bdi>{{ task.assignee.fullName }}</bdi>
+              </td>
+              <td>
+                @if (canEdit(task)) {
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      (click)="dialog().open(task)"
+                      [attr.aria-label]="('common.edit' | t) + ' ' + task.title"
+                    >
+                      <app-icon name="edit" />
+                    </button>
+                    <button
+                      type="button"
+                      class="icon-btn icon-btn--danger"
+                      (click)="remove(task)"
+                      [attr.aria-label]="('common.delete' | t) + ' ' + task.title"
+                    >
+                      <app-icon name="trash" />
+                    </button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-foot">
+      <span>{{ 'common.showing' | t: { count: result.totalElements } }}</span>
+      <app-pagination
+        [page]="result.page"
+        [totalPages]="result.totalPages"
+        (pageChange)="setFilter({ page: $event })"
+      />
+    </div>
+  }
+}
+
+<app-task-dialog (saved)="tasks.reload()" />

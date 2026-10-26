@@ -1,0 +1,223 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'contacts.title' | t }}</h1>
+    <p>{{ 'contacts.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <button type="button" class="btn btn--primary" (click)="open(null)" data-testid="new-contact">
+      <app-icon name="plus" /> {{ 'contacts.new' | t }}
+    </button>
+  </div>
+</header>
+
+<div class="toolbar" role="search">
+  <div class="search">
+    <label class="visually-hidden" for="contact-search">{{ 'common.search' | t }}</label>
+    <input
+      id="contact-search"
+      type="search"
+      [value]="searchText()"
+      (input)="onSearch($any($event.target).value)"
+      [placeholder]="'contacts.searchPlaceholder' | t"
+    />
+  </div>
+  <div>
+    <label class="visually-hidden" for="contact-company">{{ 'contacts.company' | t }}</label>
+    <select
+      id="contact-company"
+      (change)="setFilter({ companyId: $any($event.target).value || null })"
+    >
+      <option value="">{{ 'contacts.anyCompany' | t }}</option>
+      @for (c of companies.value()?.content ?? []; track c.id) {
+        <option [value]="c.id" [selected]="'' + c.id === companyId()">{{ c.name }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="contacts.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (contacts.isLoading() && !contacts.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (contacts.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ (hasFilters() ? 'common.noResults' : 'common.empty') | t }}</p>
+      @if (hasFilters()) {
+        <button type="button" class="btn" (click)="clearFilters()">
+          {{ 'common.clearFilters' | t }}
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="contacts.isLoading()">
+      <table data-testid="contacts-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'common.name' | t }}</th>
+            <th scope="col">{{ 'contacts.company' | t }}</th>
+            <th scope="col">{{ 'common.email' | t }}</th>
+            <th scope="col">{{ 'common.phone' | t }}</th>
+            <th scope="col" class="cell-end">
+              <span class="visually-hidden">{{ 'common.actions' | t }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of result.content; track c.id) {
+            <tr>
+              <td class="wrap">
+                <strong
+                  ><bdi>{{ c.fullName }}</bdi></strong
+                >
+                @if (c.jobTitle) {
+                  <div class="muted">
+                    <bdi>{{ c.jobTitle }}</bdi>
+                  </div>
+                }
+              </td>
+              <td>
+                <bdi>{{ c.company?.name ?? '—' }}</bdi>
+              </td>
+              <td dir="ltr">{{ c.email ?? '—' }}</td>
+              <td dir="ltr">{{ c.phone ?? '—' }}</td>
+              <td>
+                <div class="row-actions">
+                  @if (canEdit(c)) {
+                    <button
+                      type="button"
+                      class="icon-btn"
+                      (click)="open(c)"
+                      [attr.aria-label]="('common.edit' | t) + ' ' + c.fullName"
+                    >
+                      <app-icon name="edit" />
+                    </button>
+                  }
+                  @if (auth.isAdmin()) {
+                    <button
+                      type="button"
+                      class="icon-btn icon-btn--danger"
+                      (click)="remove(c)"
+                      [attr.aria-label]="('common.delete' | t) + ' ' + c.fullName"
+                    >
+                      <app-icon name="trash" />
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-foot">
+      <span>{{ 'common.showing' | t: { count: result.totalElements } }}</span>
+      <app-pagination
+        [page]="result.page"
+        [totalPages]="result.totalPages"
+        (pageChange)="setFilter({ page: $event })"
+      />
+    </div>
+  }
+}
+
+<dialog #dialog class="dialog" aria-labelledby="contact-dialog-title">
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <h2 id="contact-dialog-title">{{ (editing() ? 'contacts.edit' : 'contacts.new') | t }}</h2>
+    @if (formError()) {
+      <div class="alert alert--danger" role="alert">{{ formError() }}</div>
+    }
+    <div class="form-grid">
+      <div class="field">
+        <label for="c-first">{{ 'contacts.firstName' | t }}</label>
+        <input id="c-first" formControlName="firstName" aria-describedby="c-first-err" />
+        <app-field-error
+          id="c-first-err"
+          [control]="form.controls.firstName"
+          [server]="serverFields()['firstName']"
+        />
+      </div>
+      <div class="field">
+        <label for="c-last">{{ 'contacts.lastName' | t }}</label>
+        <input id="c-last" formControlName="lastName" aria-describedby="c-last-err" />
+        <app-field-error
+          id="c-last-err"
+          [control]="form.controls.lastName"
+          [server]="serverFields()['lastName']"
+        />
+      </div>
+      <div class="field">
+        <label for="c-email"
+          >{{ 'common.email' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input
+          id="c-email"
+          type="email"
+          dir="ltr"
+          formControlName="email"
+          aria-describedby="c-email-err"
+        />
+        <app-field-error
+          id="c-email-err"
+          [control]="form.controls.email"
+          [server]="serverFields()['email']"
+        />
+      </div>
+      <div class="field">
+        <label for="c-phone"
+          >{{ 'common.phone' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input
+          id="c-phone"
+          type="tel"
+          dir="ltr"
+          formControlName="phone"
+          aria-describedby="c-phone-err"
+        />
+        <app-field-error
+          id="c-phone-err"
+          [control]="form.controls.phone"
+          [server]="serverFields()['phone']"
+          patternKey="validation.phoneFormat"
+        />
+      </div>
+      <div class="field">
+        <label for="c-title"
+          >{{ 'contacts.jobTitle' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <input id="c-title" formControlName="jobTitle" />
+      </div>
+      <div class="field">
+        <label for="c-company">{{ 'contacts.company' | t }}</label>
+        <select id="c-company" formControlName="companyId">
+          <option value="">{{ 'contacts.noCompany' | t }}</option>
+          @for (c of companies.value()?.content ?? []; track c.id) {
+            <option [value]="'' + c.id">{{ c.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="field form-grid--full">
+        <label for="c-notes"
+          >{{ 'common.notes' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <textarea id="c-notes" rows="3" formControlName="notes"></textarea>
+      </div>
+    </div>
+    <div class="dialog__actions">
+      <button type="button" class="btn" (click)="close()">{{ 'common.cancel' | t }}</button>
+      <button
+        type="submit"
+        class="btn btn--primary"
+        [disabled]="saving()"
+        data-testid="save-contact"
+      >
+        {{ (saving() ? 'common.saving' : 'common.save') | t }}
+      </button>
+    </div>
+  </form>
+</dialog>

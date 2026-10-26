@@ -1,0 +1,122 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'deals.title' | t }}</h1>
+    <p>{{ 'deals.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <a class="btn btn--primary" routerLink="/deals/new"
+      ><app-icon name="plus" /> {{ 'deals.new' | t }}</a
+    >
+  </div>
+</header>
+
+<div class="toolbar" role="search">
+  <div class="search">
+    <label class="visually-hidden" for="deal-search">{{ 'common.search' | t }}</label>
+    <input
+      id="deal-search"
+      type="search"
+      [value]="searchText()"
+      (input)="onSearch($any($event.target).value)"
+      [placeholder]="'deals.searchPlaceholder' | t"
+    />
+  </div>
+  <div>
+    <label class="visually-hidden" for="deal-stage">{{ 'deals.stage' | t }}</label>
+    <select id="deal-stage" (change)="setFilter({ stage: $any($event.target).value || null })">
+      <option value="">{{ 'deals.anyStage' | t }}</option>
+      @for (s of stages; track s) {
+        <option [value]="s" [selected]="s === stage()">{{ 'stage.' + s | t }}</option>
+      }
+    </select>
+  </div>
+  <div>
+    <label class="visually-hidden" for="deal-status">{{ 'common.status' | t }}</label>
+    <select id="deal-status" (change)="setFilter({ status: $any($event.target).value || null })">
+      <option value="">{{ 'common.all' | t }}</option>
+      <option value="OPEN" [selected]="status() === 'OPEN'">{{ 'deals.statusOpen' | t }}</option>
+      <option value="CLOSED" [selected]="status() === 'CLOSED'">
+        {{ 'deals.statusClosed' | t }}
+      </option>
+    </select>
+  </div>
+  <div>
+    <label class="visually-hidden" for="deal-owner">{{ 'common.owner' | t }}</label>
+    <select id="deal-owner" (change)="setFilter({ ownerId: $any($event.target).value || null })">
+      <option value="">{{ 'common.anyOwner' | t }}</option>
+      @for (m of team.value() ?? []; track m.id) {
+        <option [value]="m.id" [selected]="'' + m.id === ownerId()">{{ m.fullName }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="deals.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (deals.isLoading() && !deals.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (deals.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ (hasFilters() ? 'common.noResults' : 'common.empty') | t }}</p>
+      @if (hasFilters()) {
+        <button type="button" class="btn" (click)="clearFilters()">
+          {{ 'common.clearFilters' | t }}
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="deals.isLoading()">
+      <table data-testid="deals-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'deals.dealTitle' | t }}</th>
+            <th scope="col">{{ 'deals.stage' | t }}</th>
+            <th scope="col" class="cell-end">{{ 'deals.amount' | t }}</th>
+            <th scope="col" class="cell-end">{{ 'deals.weighted' | t }}</th>
+            <th scope="col">{{ 'common.owner' | t }}</th>
+            <th scope="col">{{ 'deals.expectedClose' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of result.content; track d.id) {
+            <tr>
+              <td class="wrap">
+                <a class="row-link" [routerLink]="['/deals', d.id]"
+                  ><bdi>{{ d.title }}</bdi></a
+                >
+                <div class="muted">
+                  <a [routerLink]="['/companies', d.company.id]"
+                    ><bdi>{{ d.company.name }}</bdi></a
+                  >
+                </div>
+              </td>
+              <td>
+                <span [class]="'badge badge--' + d.stage">{{ 'stage.' + d.stage | t }}</span>
+              </td>
+              <td class="cell-end num">{{ fmt.amount(d.amount) }}</td>
+              <td class="cell-end num">{{ fmt.amount(d.weightedAmount) }}</td>
+              <td>
+                <bdi>{{ d.owner.fullName }}</bdi>
+              </td>
+              <td>{{ d.expectedCloseDate ? fmt.day(d.expectedCloseDate) : '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="table-foot">
+      <span>{{ 'common.showing' | t: { count: result.totalElements } }}</span>
+      <app-pagination
+        [page]="result.page"
+        [totalPages]="result.totalPages"
+        (pageChange)="setFilter({ page: $event })"
+      />
+    </div>
+  }
+}

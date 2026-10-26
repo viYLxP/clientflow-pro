@@ -1,0 +1,219 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'dashboard.title' | t }}</h1>
+    <p>{{ 'dashboard.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <div class="scope-switch" role="group" [attr.aria-label]="'dashboard.scope' | t">
+      <button
+        type="button"
+        [attr.aria-pressed]="mine()"
+        (click)="setScope(true)"
+        data-testid="scope-mine"
+      >
+        {{ 'common.mine' | t }}
+      </button>
+      <button
+        type="button"
+        [attr.aria-pressed]="!mine()"
+        (click)="setScope(false)"
+        data-testid="scope-team"
+      >
+        {{ 'common.team' | t }}
+      </button>
+    </div>
+  </div>
+</header>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="data.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (data.isLoading() && !data.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (data.value(); as d) {
+  <div class="grid grid--stats" [attr.aria-busy]="data.isLoading()">
+    <div class="card stat-card" data-testid="stat-open">
+      <span class="stat-card__label">{{ 'dashboard.openPipeline' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.openAmount) }}</span>
+      <span class="stat-card__sub">{{ 'dashboard.openDeals' | t: { count: d.openCount } }}</span>
+    </div>
+    <div class="card stat-card" data-testid="stat-forecast">
+      <span class="stat-card__label">{{ 'dashboard.forecast' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.weightedForecast) }}</span>
+      <span class="stat-card__sub">{{ 'dashboard.forecastHint' | t }}</span>
+    </div>
+    <div class="card stat-card" data-testid="stat-won">
+      <span class="stat-card__label">{{ 'dashboard.wonMonth' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.wonThisMonthAmount) }}</span>
+      <span class="stat-card__sub">{{
+        'dashboard.wonDeals' | t: { count: d.wonThisMonthCount }
+      }}</span>
+    </div>
+    <div class="card stat-card" data-testid="stat-winrate">
+      <span class="stat-card__label">{{ 'dashboard.winRate' | t }}</span>
+      @if (d.winRate !== null) {
+        <span class="stat-card__value num">{{ fmt.percent(d.winRate) }}</span>
+        <span class="stat-card__sub">{{ 'dashboard.winRateHint' | t }}</span>
+      } @else {
+        <span class="stat-card__value">—</span>
+        <span class="stat-card__sub">{{ 'dashboard.winRateNone' | t }}</span>
+      }
+    </div>
+  </div>
+
+  <div class="grid grid--2">
+    <section class="card" aria-labelledby="stage-title">
+      <div class="card__header">
+        <h2 id="stage-title">{{ 'dashboard.byStage' | t }}</h2>
+        <a routerLink="/pipeline" class="btn btn--small">{{ 'common.viewAll' | t }}</a>
+      </div>
+      <ul class="hbars" [attr.aria-label]="'dashboard.byStageLabel' | t">
+        @for (s of d.pipeline; track s.stage) {
+          <li class="hbar">
+            <span
+              >{{ 'stage.' + s.stage | t }}
+              <small class="muted">({{ fmt.number(s.count) }})</small></span
+            >
+            <span class="hbar__track" aria-hidden="true">
+              <span class="hbar__fill" [style.width.%]="(s.amount / maxStageAmount()) * 100"></span>
+            </span>
+            <span class="hbar__value num">{{ fmt.money(s.amount) }}</span>
+          </li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="tasks-title" data-testid="my-tasks">
+      <div class="card__header">
+        <h2 id="tasks-title">{{ 'dashboard.myTasks' | t }}</h2>
+        <a routerLink="/tasks" [queryParams]="{ due: 'OVERDUE' }" class="btn btn--small">{{
+          'common.viewAll' | t
+        }}</a>
+      </div>
+      <p class="muted">
+        {{
+          'dashboard.myTasksSummary' | t: { overdue: d.myOverdueCount, today: d.myDueTodayCount }
+        }}
+      </p>
+      <ul class="list">
+        @for (task of d.myTasks; track task.id) {
+          <li class="task-row">
+            <button
+              type="button"
+              class="icon-btn"
+              (click)="complete(task)"
+              [attr.aria-label]="'tasks.complete' | t: { title: task.title }"
+            >
+              <app-icon name="square" />
+            </button>
+            <div class="task-row__main">
+              <bdi>{{ task.title }}</bdi>
+              <div class="muted">
+                <span [class.overdue]="task.overdue">{{ fmt.day(task.dueDate) }}</span>
+                @if (task.deal) {
+                  ·
+                  <a [routerLink]="['/deals', task.deal.id]"
+                    ><bdi>{{ task.deal.title }}</bdi></a
+                  >
+                } @else if (task.company) {
+                  ·
+                  <a [routerLink]="['/companies', task.company.id]"
+                    ><bdi>{{ task.company.name }}</bdi></a
+                  >
+                }
+              </div>
+            </div>
+            <span [class]="'badge badge--' + task.priority">{{
+              'priority.' + task.priority | t
+            }}</span>
+          </li>
+        } @empty {
+          <li class="muted">{{ 'dashboard.noTasks' | t }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="closing-title">
+      <div class="card__header">
+        <h2 id="closing-title">{{ 'dashboard.closingSoon' | t }}</h2>
+      </div>
+      <ul class="list">
+        @for (deal of d.closingSoon; track deal.id) {
+          <li>
+            <span class="list__main">
+              <strong
+                ><a [routerLink]="['/deals', deal.id]"
+                  ><bdi>{{ deal.title }}</bdi></a
+                ></strong
+              >
+              <span class="muted"
+                ><bdi>{{ deal.company.name }}</bdi> · {{ 'stage.' + deal.stage | t }}</span
+              >
+            </span>
+            <span class="num">
+              {{ fmt.money(deal.amount) }}
+              <small class="muted list__sub">{{ fmt.day(deal.expectedCloseDate!) }}</small>
+            </span>
+          </li>
+        } @empty {
+          <li class="muted">{{ 'dashboard.noClosing' | t }}</li>
+        }
+      </ul>
+    </section>
+
+    <section class="card" aria-labelledby="reps-title">
+      <div class="card__header">
+        <h2 id="reps-title">{{ 'dashboard.topReps' | t }}</h2>
+        <app-icon name="trophy" />
+      </div>
+      <ul class="list">
+        @for (rep of d.topReps; track rep.userId) {
+          <li>
+            <span class="list__main">
+              <strong
+                ><bdi>{{ rep.fullName }}</bdi></strong
+              >
+              <span class="muted">{{ 'dashboard.wonDeals' | t: { count: rep.wonCount } }}</span>
+            </span>
+            <span class="num">{{ fmt.money(rep.wonAmount) }}</span>
+          </li>
+        } @empty {
+          <li class="muted">{{ 'dashboard.noWins' | t }}</li>
+        }
+      </ul>
+    </section>
+  </div>
+
+  <section class="card section-gap" aria-labelledby="recent-title">
+    <div class="card__header">
+      <h2 id="recent-title">{{ 'dashboard.recent' | t }}</h2>
+    </div>
+    <ul class="timeline">
+      @for (a of d.recentActivities; track a.id) {
+        <li>
+          <span class="timeline__icon"><app-icon [name]="icons[a.type]" /></span>
+          <div>
+            <div class="timeline__meta">
+              <strong>{{ 'activityType.' + a.type | t }}</strong> ·
+              {{ fmt.dateTime(a.occurredAt) }} ·
+              <a [routerLink]="['/companies', a.company.id]"
+                ><bdi>{{ a.company.name }}</bdi></a
+              >
+              ·
+              <bdi>{{ 'activities.by' | t: { name: a.author.fullName } }}</bdi>
+            </div>
+            <p class="timeline__body">
+              <bdi>{{ a.body }}</bdi>
+            </p>
+          </div>
+        </li>
+      } @empty {
+        <li class="muted">{{ 'dashboard.noActivity' | t }}</li>
+      }
+    </ul>
+  </section>
+}
