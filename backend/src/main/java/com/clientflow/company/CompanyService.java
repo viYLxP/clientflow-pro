@@ -22,6 +22,7 @@ import com.clientflow.company.CompanyDtos.CompanyResponse;
 import com.clientflow.contact.ContactRepository;
 import com.clientflow.deal.DealRepository;
 import com.clientflow.deal.DealStage;
+import com.clientflow.invoice.InvoiceRepository;
 import com.clientflow.user.CurrentUserService;
 
 @Service
@@ -33,13 +34,15 @@ public class CompanyService {
     private final CompanyRepository companies;
     private final ContactRepository contacts;
     private final DealRepository deals;
+    private final InvoiceRepository invoices;
     private final CurrentUserService currentUser;
 
     public CompanyService(CompanyRepository companies, ContactRepository contacts, DealRepository deals,
-                          CurrentUserService currentUser) {
+                          InvoiceRepository invoices, CurrentUserService currentUser) {
         this.companies = companies;
         this.contacts = contacts;
         this.deals = deals;
+        this.invoices = invoices;
         this.currentUser = currentUser;
     }
 
@@ -97,14 +100,16 @@ public class CompanyService {
     @Transactional
     public void delete(Long id) {
         Company company = get(id);
-        // Deals and contacts are real business history; deleting the company would erase them, so we refuse.
+        // Deals, contacts and invoices are real business history; deleting the company would erase them, so we refuse.
         // Its tasks and activity notes are removed with it (ON DELETE CASCADE).
-        // الصفقات وجهات الاتصال تاريخ عمل حقيقي؛ حذف الشركة بيمسحها، فنرفض.
+        // الصفقات وجهات الاتصال والفواتير تاريخ عمل حقيقي؛ حذف الشركة بيمسحها، فنرفض.
         // ومهامها وسجل تواصلها تنحذف معها (ON DELETE CASCADE).
         long dealCount = deals.countByCompanyId(id);
         long contactCount = contacts.countByCompanyId(id);
-        if (dealCount > 0 || contactCount > 0) {
-            throw new ApiException(ErrorCode.IN_USE, Map.of("deals", dealCount, "contacts", contactCount));
+        long invoiceCount = invoices.countByCompanyId(id);
+        if (dealCount > 0 || contactCount > 0 || invoiceCount > 0) {
+            throw new ApiException(ErrorCode.IN_USE,
+                    Map.of("deals", dealCount, "contacts", contactCount, "invoices", invoiceCount));
         }
         companies.delete(company);
     }

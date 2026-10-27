@@ -15,7 +15,7 @@
   <artifactId>clientflow-api</artifactId>
   <version>1.0.0</version>
   <name>ClientFlow Pro API</name>
-  <description>Inventory and sales management REST API (Spring Boot + PostgreSQL)</description>
+  <description>CRM REST API with a client portal, invoices and online payments (Spring Boot + PostgreSQL)</description>
 
   <properties>
     <java.version>21</java.version>

@@ -30,7 +30,8 @@ public class TeamController {
     @GetMapping
     public List<TeamMember> list() {
         return users.findAll().stream()
-                .filter(AppUser::isActive)
+                // Client portal accounts are not team members. / حسابات بوابة العملاء مو من الفريق.
+                .filter(u -> u.isActive() && u.getRole().isStaff())
                 .sorted(Comparator.comparing(AppUser::getFullName, String.CASE_INSENSITIVE_ORDER))
                 .map(u -> new TeamMember(u.getId(), u.getFullName()))
                 .toList();

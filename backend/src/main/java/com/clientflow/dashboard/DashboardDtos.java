@@ -26,6 +26,7 @@ public final class DashboardDtos {
      *                           / نسبة الفوز آخر 90 يوم من 0 إلى 100؛ null لو ما انغلق شي
      * @param myTasks            the caller's open tasks due today or earlier (always personal)
      *                           / مهام المستخدم المفتوحة المستحقة اليوم أو قبل (شخصية دائمًا)
+     * @param billing            invoices and contact-form numbers for the whole team / أرقام الفواتير ونموذج التواصل للفريق كامل
      */
     public record DashboardResponse(Long scopeOwnerId,
                                     List<StageSummary> pipeline,
@@ -40,6 +41,14 @@ public final class DashboardDtos {
                                     List<TaskResponse> myTasks,
                                     List<RepSummary> topReps,
                                     List<DealResponse> closingSoon,
-                                    List<ActivityResponse> recentActivities) {
+                                    List<ActivityResponse> recentActivities,
+                                    Billing billing) {
+    }
+
+    /**
+     * @param outstanding     total of issued, unpaid invoices / مجموع الفواتير الصادرة غير المدفوعة
+     * @param collectedMonth  money received this month (online and bank transfers) / الفلوس اللي وصلت هالشهر (أونلاين وتحويلات)
+     */
+    public record Billing(BigDecimal outstanding, long overdueCount, BigDecimal collectedMonth, long newInquiries) {
     }
 }

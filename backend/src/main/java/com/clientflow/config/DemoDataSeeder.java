@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.function.Supplier;
 
+import jakarta.persistence.EntityManager;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -32,6 +34,17 @@ import com.clientflow.deal.DealDtos.StageRequest;
 import com.clientflow.deal.DealRepository;
 import com.clientflow.deal.DealService;
 import com.clientflow.deal.DealStage;
+import com.clientflow.inquiry.InquiryDtos.ConvertRequest;
+import com.clientflow.inquiry.InquiryDtos.InquiryRequest;
+import com.clientflow.inquiry.InquiryService;
+import com.clientflow.invoice.InvoiceDtos.InvoiceDetail;
+import com.clientflow.invoice.InvoiceDtos.InvoiceRequest;
+import com.clientflow.invoice.InvoiceDtos.LineRequest;
+import com.clientflow.invoice.InvoiceService;
+import com.clientflow.payment.Payment;
+import com.clientflow.payment.PaymentDtos.SandboxRequest;
+import com.clientflow.payment.PaymentService;
+import com.clientflow.portal.PortalAccessService;
 import com.clientflow.task.TaskDtos.TaskRequest;
 import com.clientflow.task.TaskDtos.TaskResponse;
 import com.clientflow.task.TaskPriority;
@@ -66,8 +79,13 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final DealRepository dealRepository;
     private final TaskService tasks;
     private final ActivityService activities;
+    private final InvoiceService invoices;
+    private final PaymentService payments;
+    private final PortalAccessService portal;
+    private final InquiryService inquiries;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
+    private final EntityManager entityManager;
 
     private Instant now;
     private LocalDate today;
@@ -75,7 +93,14 @@ public class DemoDataSeeder implements ApplicationRunner {
     public DemoDataSeeder(AppProperties properties, AppUserRepository users, PasswordEncoder passwordEncoder,
                           CompanyService companies, ContactService contacts, DealService deals,
                           DealRepository dealRepository, TaskService tasks, ActivityService activities,
-                          JdbcTemplate jdbc, TransactionTemplate tx) {
+                          InvoiceService invoices, PaymentService payments, PortalAccessService portal,
+                          InquiryService inquiries, JdbcTemplate jdbc, TransactionTemplate tx,
+                          EntityManager entityManager) {
+        this.entityManager = entityManager;
+        this.invoices = invoices;
+        this.payments = payments;
+        this.portal = portal;
+        this.inquiries = inquiries;
         this.properties = properties;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
@@ -97,7 +122,8 @@ public class DemoDataSeeder implements ApplicationRunner {
         // One transaction for the whole seed: either all demo data is created, or none.
         // معاملة وحدة لكل البيانات: يا تنضاف كلها يا ولا شي.
         tx.executeWithoutResult(status -> seed());
-        log.info("Demo data created. Log in as 'admin', 'sara' or 'khalid' (passwords from ADMIN_PASSWORD / SALES_PASSWORD).");
+        log.info("Demo data created. Staff: 'admin', 'sara', 'khalid' (ADMIN_PASSWORD / SALES_PASSWORD). "
+                + "Client portal: 'faisal@alnoor.example' (CLIENT_PASSWORD).");
     }
 
     private void seed() {
@@ -150,17 +176,17 @@ public class DemoDataSeeder implements ApplicationRunner {
         long posRollout = deal("POS rollout for 12 branches", noor, faisal, sara, "185000", 20, 35, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION), null, null);
         deal("Annual support renewal", noor, reem, sara, "42000", 6, 18, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL), null, null);
         long fleet = deal("Fleet tracking system", redSea, omar, khalid, "260000", 40, 28, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL), null, null);
-        deal("Warehouse handheld scanners", redSea, omar, khalid, "64000", 12, 50, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION, DealStage.WON), 3, null);
+        long scanners = deal("Warehouse handheld scanners", redSea, omar, khalid, "64000", 12, 50, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION, DealStage.WON), 3, null);
         long clinic = deal("Clinic appointment portal", najd, huda, sara, "120000", 30, 22, List.of(DealStage.QUALIFIED), null, null);
-        deal("Network upgrade", najd, huda, sara, "38500", -5, 60, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.WON), 40, null);
+        long network = deal("Network upgrade", najd, huda, sara, "38500", -5, 60, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.WON), 40, null);
         deal("Field safety app", eastern, majed, khalid, "310000", 55, 10, List.of(), null, null);
         deal("Maintenance contract 2025", eastern, majed, khalid, "95000", -20, 75, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION, DealStage.LOST), 25, "Chose a cheaper local supplier");
         deal("Student information system", taiba, lina, sara, "150000", 45, 14, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL), null, null);
-        deal("Smart classroom pilot", taiba, lina, sara, "27000", 3, 40, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.WON), 8, null);
+        long classroom = deal("Smart classroom pilot", taiba, lina, sara, "27000", 3, 40, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.WON), 8, null);
         long booking = deal("Hotel booking engine", corniche, yousef, khalid, "88000", 25, 12, List.of(DealStage.QUALIFIED), null, null);
         deal("Guest Wi-Fi portal", corniche, yousef, khalid, "19500", -10, 45, List.of(DealStage.QUALIFIED, DealStage.LOST), 15, "Budget frozen until next year");
         deal("E-commerce store", qassim, nasser, sara, "54000", 15, 6, List.of(), null, null);
-        deal("Export ERP integration", qassim, nasser, sara, "132000", 5, 65, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION, DealStage.WON), 1, null);
+        long erp = deal("Export ERP integration", qassim, nasser, sara, "132000", 5, 65, List.of(DealStage.QUALIFIED, DealStage.PROPOSAL, DealStage.NEGOTIATION, DealStage.WON), 1, null);
         deal("Data centre audit", noor, null, admin, "23000", 9, 4, List.of(DealStage.QUALIFIED), null, null);
 
         // Tasks: some overdue, some due today, some later, one done, so every task view has content.
@@ -191,6 +217,154 @@ public class DemoDataSeeder implements ApplicationRunner {
             return null;
         });
         task("Review Q4 pipeline with the team", 1, TaskPriority.MEDIUM, null, null, null);
+
+        seedPortal(faisal, huda);
+        seedBilling(noor, faisal, redSea, omar, scanners, najd, huda, network, taiba, lina, classroom, qassim,
+                nasser, erp);
+        seedInquiries();
+    }
+
+    /**
+     * Invoices in every state, paid through the real payment flow (the sandbox card and a bank transfer).
+     * فواتير بكل الحالات، مدفوعة عن طريق مسار الدفع الحقيقي (البطاقة التجريبية وتحويل بنكي).
+     */
+    private void seedBilling(long noor, long faisal, long redSea, long omar, long scanners, long najd, long huda,
+                             long network, long taiba, long lina, long classroom, long qassim, long nasser,
+                             long erp) {
+        // Al Noor (the demo client's company): one big and one small open invoice, one paid by card, one draft.
+        // النور (شركة العميل التجريبي): فاتورة كبيرة وفاتورة صغيرة مفتوحتين، ووحدة مدفوعة بالبطاقة، ومسودة.
+        issued(invoice(noor, faisal, null, 10, "Phase 1 of the 12-branch rollout",
+                line("POS licences, phase 1", 12, "2500"), line("Installation and staff training", 1, "4500")), 6);
+        issued(invoice(noor, faisal, null, 14, null, line("Support hours (last month)", 6, "350")), 2);
+        InvoiceDetail healthCheck = issued(invoice(noor, faisal, null, 7, null,
+                line("Network health check", 1, "3000")), 20);
+        payByTestCard(healthCheck, 18);
+        invoice(noor, null, null, 30, "Waiting for the final branch count", line("POS licences, phase 2", 8, "2500"));
+
+        // Won deals are invoiced: one paid by bank transfer, one overdue, one open, one voided and re-issued.
+        // الصفقات الرابحة تنفوتر: وحدة مدفوعة بتحويل بنكي، ووحدة متأخرة، ووحدة مفتوحة، ووحدة ملغاة وانصدرت من جديد.
+        InvoiceDetail scannerInvoice = issued(invoice(redSea, omar, scanners, 15, null,
+                line("Handheld scanners", 40, "1400"), line("Delivery and setup", 1, "8000")), 3);
+        scannerInvoice = invoices.recordTransfer(scannerInvoice.invoice().id(), "SNB-TRX-558201",
+                scannerInvoice.invoice().version());
+        backdatePayment(scannerInvoice.invoice().id(), 1);
+        InvoiceDetail networkInvoice = issued(invoice(najd, huda, network, 30, null,
+                line("Network upgrade, as quoted", 1, "38500")), 40);
+        // Due 10 days ago, so the overdue filter and the dashboard tile have something to show.
+        // مستحقة قبل 10 أيام، حتى فلتر المتأخرات وبطاقة اللوحة يكون فيها شي.
+        backdate(() -> jdbc.update("update invoice set due_date = ? where id = ?", today.minusDays(10),
+                networkInvoice.invoice().id()));
+        InvoiceDetail wrong = issued(invoice(taiba, lina, classroom, 15, null,
+                line("Smart classroom kit", 3, "9000")), 8);
+        invoices.voidInvoice(wrong.invoice().id(), "Wrong quantity; replaced by a new invoice",
+                wrong.invoice().version());
+        issued(invoice(taiba, lina, classroom, 15, null, line("Smart classroom kit", 3, "9000")), 7);
+        issued(invoice(qassim, nasser, erp, 30, "50% on signing, 50% on go-live",
+                line("ERP integration, first 50%", 1, "66000")), 1);
+    }
+
+    /**
+     * Faisal (Al Noor) can sign in to the portal; Huda (Najd) was invited but has not set a password yet.
+     * Both go through the real invite flow.
+     * فيصل (النور) يقدر يدخل البوابة؛ وهدى (نجد) انْدعت بس لسا ما اختارت كلمة مرور. الاثنين عن طريق مسار الدعوة الحقيقي.
+     */
+    private void seedPortal(long faisal, long huda) {
+        asUser("sara", () -> {
+            String link = portal.invite(faisal).inviteUrl();
+            portal.accept(link.substring(link.indexOf('#') + 1), properties.seed().clientPassword());
+            return null;
+        });
+        asUser("sara", () -> portal.invite(huda));
+    }
+
+    private void seedInquiries() {
+        inquiries.receive(new InquiryRequest("Fahad Al-Qahtani", "Desert Rose Hotels", "fahad@desertrose.example",
+                "+966 55 300 4411", "We run 6 hotels and want one CRM for corporate bookings. Can we get a demo?", null));
+        inquiries.receive(new InquiryRequest("نورة السبيعي", "مكتب نورة للمحاماة", "noura@nouralaw.example", null,
+                "نحتاج نظام لمتابعة العملاء والفواتير لمكتب فيه 8 محامين. كم التكلفة؟", null));
+        inquiries.receive(new InquiryRequest("Sami Haddad", null, "sami.haddad@example.com", "+966 50 777 1203",
+                "Freelance designer here. Is there a plan for one person?", null));
+        inquiries.receive(new InquiryRequest("Tariq Bin Saeed", "Madinah Fresh Market", "tariq@madinahfresh.example",
+                "+966 54 120 9090", "Looking for a CRM with Arabic invoices for our wholesale customers.", null));
+        inquiries.receive(new InquiryRequest("SEO Booster", null, "offers@seo-booster.example", null,
+                "We can rank your website #1 on Google in 7 days, cheap price!!!", null));
+        List<Long> ids = jdbc.queryForList("select id from inquiry order by id", Long.class);
+        asUser("khalid", () -> inquiries.convert(ids.get(3), new ConvertRequest(null, "Wholesale CRM and invoicing",
+                new BigDecimal("45000"))));
+        asUser("sara", () -> inquiries.dismiss(ids.get(4)));
+        // Spread the arrival times over the last days. / نوزّع أوقات الوصول على الأيام اللي فاتت.
+        for (int i = 0; i < ids.size(); i++) {
+            Instant at = now.minus(Duration.ofHours(6L + 20L * (ids.size() - i)));
+            long id = ids.get(i);
+            backdate(() -> jdbc.update("update inquiry set created_at = ?, handled_at = case when handled_at is null then null "
+                    + "else cast(? as timestamptz) end where id = ?", Timestamp.from(at),
+                    Timestamp.from(at.plus(Duration.ofHours(3))), id));
+        }
+        // The lead made from the converted message starts when it was handled, and the note keeps the arrival time.
+        // الصفقة اللي انعملت من الرسالة المحوّلة تبدأ وقت معالجتها، والملاحظة تحفظ وقت وصول الرسالة.
+        backdate(() -> {
+            jdbc.update("""
+                    update deal d set created_at = i.handled_at, updated_at = i.handled_at
+                    from inquiry i where i.deal_id = d.id""");
+            jdbc.update("""
+                    update deal_stage_change c set changed_at = i.handled_at
+                    from inquiry i where i.deal_id = c.deal_id""");
+            jdbc.update("""
+                    update activity a set occurred_at = i.created_at, created_at = i.handled_at
+                    from inquiry i where i.deal_id = a.deal_id""");
+        });
+    }
+
+    private InvoiceDetail invoice(long companyId, Long contactId, Long dealId, int dueInDays, String notes,
+                                  LineRequest... lines) {
+        return invoices.create(new InvoiceRequest(companyId, contactId, dealId, today.plusDays(dueInDays), notes,
+                List.of(lines), null));
+    }
+
+    private static LineRequest line(String description, int quantity, String unitPrice) {
+        return new LineRequest(description, quantity, new BigDecimal(unitPrice));
+    }
+
+    // Issues the draft, then moves its dates back so the list looks lived-in. / يصدر المسودة، وبعدها يرجّع تواريخها للماضي.
+    private InvoiceDetail issued(InvoiceDetail draft, int issuedDaysAgo) {
+        InvoiceDetail issued = invoices.issue(draft.invoice().id(), draft.invoice().version());
+        Instant at = now.minus(Duration.ofDays(issuedDaysAgo));
+        backdate(() -> jdbc.update("update invoice set issue_date = ?, issued_at = ?, created_at = ? where id = ?",
+                today.minusDays(issuedDaysAgo), Timestamp.from(at), Timestamp.from(at.minus(Duration.ofHours(2))),
+                draft.invoice().id()));
+        return issued;
+    }
+
+    // The client pays on the sandbox page with the approved test card. / العميل يدفع في الصفحة التجريبية بالبطاقة المقبولة.
+    private void payByTestCard(InvoiceDetail detail, int paidDaysAgo) {
+        asUser("faisal@alnoor.example", () -> {
+            var checkout = invoices.payAsClient(detail.invoice().company().id(), detail.invoice().number(),
+                    Payment.Method.CARD);
+            return payments.payInSandbox(checkout.paymentId(), new SandboxRequest("4111 1111 1111 1111", 12,
+                    today.getYear() + 2, "123", "Faisal Al-Dosari", null));
+        });
+        backdatePayment(detail.invoice().id(), paidDaysAgo);
+    }
+
+    private void backdatePayment(long invoiceId, int daysAgo) {
+        Timestamp at = Timestamp.from(now.minus(Duration.ofDays(daysAgo)));
+        backdate(() -> {
+            jdbc.update("update invoice set paid_at = ? where id = ?", at, invoiceId);
+            jdbc.update("update payment set created_at = ?, paid_at = ? where invoice_id = ? and status = 'PAID'",
+                    at, at, invoiceId);
+        });
+    }
+
+    /**
+     * Runs a plain SQL date change. Pending JPA changes are written first, and loaded entities are dropped after,
+     * so a later save cannot put the old dates back.
+     * يشغّل تعديل تاريخ بـ SQL مباشر. تغييرات JPA المعلّقة تنكتب أول، والكيانات المحمّلة تنشال بعده، حتى حفظ لاحق
+     * ما يرجّع التواريخ القديمة.
+     */
+    private void backdate(Runnable sql) {
+        entityManager.flush();
+        sql.run();
+        entityManager.clear();
     }
 
     private long company(String name, String industry, String city, String phone, String email, String website,

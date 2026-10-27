@@ -77,7 +77,8 @@ public class Contact {
     }
 
     public String getFullName() {
-        return firstName + " " + lastName;
+        // Trimmed, so a one-word name (e.g. from the contact form) has no trailing space. / مقصوص، حتى الاسم الواحد ما يجي بعده مسافة.
+        return (firstName + " " + lastName).trim();
     }
 
     public Long getId() { return id; }

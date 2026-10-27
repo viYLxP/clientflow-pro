@@ -48,6 +48,26 @@ public enum ErrorCode {
     // An admin cannot disable or demote their own account, so the system is never locked out.
     // منع المدير من إيقاف حسابه أو تغيير صلاحيته بنفسه حتى لا يُقفل النظام.
     CANNOT_MODIFY_SELF(HttpStatus.CONFLICT),
+    // The invoice's status does not allow this (e.g. editing an issued invoice, paying a draft).
+    // حالة الفاتورة ما تسمح بهالعملية (مثل تعديل فاتورة صادرة، أو دفع مسودة).
+    INVALID_STATUS(HttpStatus.CONFLICT),
+    // The deal chosen for an invoice belongs to another company.
+    // الصفقة المختارة للفاتورة تابعة لشركة ثانية.
+    DEAL_COMPANY_MISMATCH(HttpStatus.CONFLICT),
+    // Portal access needs a contact with an email (the login) and a company (whose invoices they see).
+    // دخول البوابة يحتاج جهة اتصال عندها إيميل (للدخول) وشركة (يشوف فواتيرها).
+    PORTAL_NEEDS_EMAIL(HttpStatus.CONFLICT),
+    PORTAL_NEEDS_COMPANY(HttpStatus.CONFLICT),
+    // The invite link is wrong, already used, or expired. / رابط الدعوة غلط، أو مستخدم، أو منتهي.
+    INVITE_INVALID(HttpStatus.BAD_REQUEST),
+    // Too many requests from the same address on a public endpoint. / طلبات كثيرة من نفس العنوان على رابط عام.
+    RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS),
+    // The invoice cannot be paid now (not issued, already paid, or voided). / الفاتورة ما تنْدفع الحين (مو صادرة، أو مدفوعة، أو ملغاة).
+    PAYMENT_NOT_ALLOWED(HttpStatus.CONFLICT),
+    // Tabby/Tamara are offered only within their amount limits. / تابي وتمارا متاحين بس داخل حدود المبلغ.
+    INSTALMENTS_NOT_AVAILABLE(HttpStatus.CONFLICT),
+    // The payment gateway did not answer or refused the request. / بوابة الدفع ما ردّت أو رفضت الطلب.
+    PAYMENT_PROVIDER_ERROR(HttpStatus.BAD_GATEWAY),
     // Unexpected server error.
     // خطأ غير متوقع في الخادم.
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR);

@@ -17,4 +17,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByUsernameIgnoreCase(String username);
 
     long countByRoleAndActiveTrue(Role role);
+
+    // The client login of a contact, if one was ever created. / دخول العميل لجهة اتصال، لو انعمل قبل.
+    Optional<AppUser> findByContactId(Long contactId);
+
+    Optional<AppUser> findByInviteTokenHash(String inviteTokenHash);
 }

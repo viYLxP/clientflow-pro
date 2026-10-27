@@ -1,6 +1,7 @@
 package com.clientflow.user;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,7 +32,11 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<UserResponse> list() {
-        return users.findAll(Sort.by("username")).stream().map(UserResponse::from).toList();
+        // Staff accounts only; client logins are managed from their contact page.
+        // حسابات الموظفين بس؛ ودخول العملاء ينْدار من صفحة جهة الاتصال.
+        return users.findAll(Sort.by("username")).stream()
+                .filter(u -> u.getRole().isStaff())
+                .map(UserResponse::from).toList();
     }
 
     @Transactional(readOnly = true)
@@ -43,6 +48,7 @@ public class UserService {
     public UserResponse create(CreateUserRequest request) {
         // Check first to return a clear error code instead of a raw database constraint error.
         // نتحقق أولًا حتى نرجّع رمز خطأ واضح بدل خطأ قيد قاعدة البيانات.
+        requireStaffRole(request.role());
         if (users.existsByUsernameIgnoreCase(request.username())) {
             throw new ApiException(ErrorCode.USERNAME_EXISTS);
         }
@@ -53,7 +59,8 @@ public class UserService {
 
     @Transactional
     public UserResponse update(Long id, UpdateUserRequest request) {
-        AppUser user = users.findById(id).orElseThrow(() -> ApiException.notFound("user", id));
+        AppUser user = staff(id);
+        requireStaffRole(request.role());
         // An admin cannot disable or demote themselves; otherwise they could lock everyone out.
         // المدير لا يقدر يوقف نفسه أو ينزّل صلاحيته، وإلا ممكن يقفل النظام على الجميع.
         boolean isSelf = user.getUsername().equalsIgnoreCase(CurrentUser.username());
@@ -70,8 +77,22 @@ public class UserService {
 
     @Transactional
     public void resetPassword(Long id, String newPassword) {
-        AppUser user = users.findById(id).orElseThrow(() -> ApiException.notFound("user", id));
+        AppUser user = staff(id);
         user.setPasswordHash(passwordEncoder.encode(newPassword));
+    }
+
+    // A client login is not a staff account, so /api/users does not see it. / دخول العميل مو حساب موظف، فـ /api/users ما يشوفه.
+    private AppUser staff(Long id) {
+        return users.findById(id)
+                .filter(u -> u.getRole().isStaff())
+                .orElseThrow(() -> ApiException.notFound("user", id));
+    }
+
+    // Client accounts are created only through a contact's portal invite. / حسابات العملاء تنشأ بس من دعوة البوابة لجهة الاتصال.
+    private static void requireStaffRole(Role role) {
+        if (!role.isStaff()) {
+            throw new ApiException(ErrorCode.VALIDATION_FAILED, Map.of("fields", Map.of("role", "Staff")));
+        }
     }
 
     private AppUser findByUsername(String username) {

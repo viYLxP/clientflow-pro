@@ -8,10 +8,15 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.clientflow.contact.Contact;
 
 /**
  * A user account that can log in to the system.
@@ -25,7 +30,8 @@ public class AppUser {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 50)
+    // Staff pick a short name; a client signs in with their email. / الموظف يختار اسم قصير؛ والعميل يدخل بإيميله.
+    @Column(nullable = false, unique = true, length = 150)
     private String username;
 
     @Column(name = "full_name", nullable = false, length = 120)
@@ -42,10 +48,23 @@ public class AppUser {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    // Disabled users cannot log in, but their history (orders, movements) stays intact.
-    // المستخدم الموقوف لا يقدر يدخل، لكن سجله (الطلبات والحركات) يبقى محفوظًا.
+    // Disabled users cannot log in, but their history (deals, notes, payments) stays intact.
+    // المستخدم الموقوف لا يقدر يدخل، لكن سجله (الصفقات والملاحظات والمدفوعات) يبقى محفوظًا.
     @Column(nullable = false)
     private boolean active = true;
+
+    // Set only for CLIENT accounts: the contact person whose company's invoices they see.
+    // موجود بس لحسابات CLIENT: جهة الاتصال اللي يشوف فواتير شركتها.
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "contact_id")
+    private Contact contact;
+
+    // SHA-256 of the one-time invite link token, and when it stops working. / SHA-256 لرمز رابط الدعوة، ومتى ينتهي.
+    @Column(name = "invite_token_hash", length = 64)
+    private String inviteTokenHash;
+
+    @Column(name = "invite_expires_at")
+    private Instant inviteExpiresAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -69,6 +88,10 @@ public class AppUser {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getFullName() {
@@ -101,6 +124,27 @@ public class AppUser {
 
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public Contact getContact() {
+        return contact;
+    }
+
+    public void setContact(Contact contact) {
+        this.contact = contact;
+    }
+
+    public String getInviteTokenHash() {
+        return inviteTokenHash;
+    }
+
+    public Instant getInviteExpiresAt() {
+        return inviteExpiresAt;
+    }
+
+    public void setInvite(String tokenHash, Instant expiresAt) {
+        this.inviteTokenHash = tokenHash;
+        this.inviteExpiresAt = expiresAt;
     }
 
     public Instant getCreatedAt() {

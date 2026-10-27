@@ -42,8 +42,8 @@ import com.clientflow.user.AppUser;
 import com.clientflow.user.AppUserRepository;
 
 /**
- * Security setup: stateless JWT authentication with two roles, ADMIN and SALES.
- * إعداد الأمان: مصادقة JWT بدون جلسات (stateless) مع دورين: ADMIN و SALES.
+ * Security setup: stateless JWT authentication. Staff roles are ADMIN and SALES; CLIENT accounts see the portal only.
+ * إعداد الأمان: مصادقة JWT بدون جلسات (stateless). أدوار الموظفين ADMIN و SALES؛ وحسابات CLIENT تشوف البوابة بس.
  *
  * <p>We use Spring Security's built-in OAuth2 Resource Server support to validate tokens instead of a
  * hand-written filter: it checks the signature and expiry for us and is well tested.</p>
@@ -73,22 +73,32 @@ public class SecurityConfig {
                 // لا ننشئ جلسة HTTP أبدًا: كل طلب لازم يحمل رمزه.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints: login, health check and the API docs.
-                        // روابط عامة: تسجيل الدخول، فحص الصحة، وتوثيق الـ API.
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        // Public endpoints: login, accepting a portal invite, the contact form, the payment page,
+                        // health check and the API docs.
+                        // روابط عامة: الدخول، وقبول دعوة البوابة، ونموذج التواصل، وصفحة الدفع، وفحص الصحة، وتوثيق الـ API.
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/invite/**",
+                                "/api/public/inquiries").permitAll()
+                        .requestMatchers("/api/public/payments/**").permitAll()
                         .requestMatchers("/actuator/health", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        // "Who am I" works for every signed-in account, so the UI knows where to send it.
+                        // "مين أنا" يشتغل لكل حساب مسجّل، حتى الواجهة تعرف وين توديه.
+                        .requestMatchers("/api/auth/me").authenticated()
+                        // The client portal is for client accounts only. / بوابة العملاء لحسابات العملاء بس.
+                        .requestMatchers("/api/portal/**").hasRole("CLIENT")
                         // User management is admin-only.
                         // إدارة المستخدمين للمدير فقط.
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        // Exception: anyone may delete their own task or activity note; the service checks they wrote it.
-                        // استثناء: أي مستخدم يقدر يحذف مهمته أو ملاحظته؛ والخدمة تتأكد إنه هو اللي كتبها.
-                        .requestMatchers(HttpMethod.DELETE, "/api/tasks/*", "/api/activities/*").authenticated()
+                        // Exception: anyone may delete their own task or activity note, or a draft invoice of their
+                        // account; the service checks they may.
+                        // استثناء: أي موظف يقدر يحذف مهمته أو ملاحظته، أو مسودة فاتورة لحسابه؛ والخدمة تتأكد إنه يحق له.
+                        .requestMatchers(HttpMethod.DELETE, "/api/tasks/*", "/api/activities/*", "/api/invoices/*")
+                        .hasAnyRole("ADMIN", "SALES")
                         // Deleting business records is admin-only; sales reps can still create and edit what they own.
                         // حذف سجلات العمل للمدير فقط، والمندوب يقدر يضيف ويعدّل اللي يملكه.
                         .requestMatchers(HttpMethod.DELETE, "/api/**").hasRole("ADMIN")
-                        // Everything else under /api needs a valid token.
-                        // باقي روابط /api تحتاج رمزًا صالحًا.
-                        .requestMatchers("/api/**").authenticated()
+                        // Everything else under /api is the CRM itself: staff only, so a client token cannot read it.
+                        // باقي روابط /api هي النظام نفسه: للموظفين بس، فرمز العميل ما يقدر يقراها.
+                        .requestMatchers("/api/**").hasAnyRole("ADMIN", "SALES")
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter(users)))

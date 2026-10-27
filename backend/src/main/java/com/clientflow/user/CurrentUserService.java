@@ -88,7 +88,7 @@ public class CurrentUserService {
      */
     public AppUser activeUser(Long id) {
         return users.findById(id)
-                .filter(AppUser::isActive)
+                .filter(u -> u.isActive() && u.getRole().isStaff())
                 .orElseThrow(() -> ApiException.notFound("user", id));
     }
 }

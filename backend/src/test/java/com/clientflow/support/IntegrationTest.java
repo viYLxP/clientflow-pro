@@ -71,9 +71,11 @@ public abstract class IntegrationTest {
     @BeforeEach
     void resetDatabase() {
         jdbc.execute("""
-                truncate table activity, task, deal_stage_change, deal, contact, company, app_user
+                truncate table inquiry, payment, invoice_line, invoice, activity, task, deal_stage_change, deal,
+                contact, company, app_user
                 restart identity cascade
                 """);
+        jdbc.execute("alter sequence invoice_number_seq restart");
         users.save(new AppUser("admin", "Admin", passwordEncoder.encode(ADMIN_PASSWORD), Role.ADMIN));
         users.save(new AppUser("sara", "Sara", passwordEncoder.encode(SALES_PASSWORD), Role.SALES));
         users.save(new AppUser("khalid", "Khalid", passwordEncoder.encode(SALES_PASSWORD), Role.SALES));
@@ -148,5 +150,50 @@ public abstract class IntegrationTest {
         return createId("/api/deals", """
                 {"title":"%s","companyId":%d,"amount":%s}
                 """.formatted(title, companyId, amount), token);
+    }
+
+    protected static final String CLIENT_PASSWORD = "Client@12345";
+
+    protected long contactWithEmail(String token, String firstName, Long companyId, String email) throws Exception {
+        return createId("/api/contacts", """
+                {"firstName":"%s","lastName":"Client","email":"%s","companyId":%s}
+                """.formatted(firstName, email, companyId), token);
+    }
+
+    /** Invites the contact to the portal and returns the token from the link. / يدعو جهة الاتصال للبوابة ويرجّع الرمز من الرابط. */
+    protected String inviteToken(String staffToken, long contactId) throws Exception {
+        String body = mvc.perform(auth(post("/api/contacts/%d/portal-access/invite".formatted(contactId)), staffToken))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String url = JsonPath.read(body, "$.inviteUrl");
+        return url.substring(url.indexOf('#') + 1);
+    }
+
+    /** Invites the contact, accepts the invite like the client would, and returns the client's JWT. / يدعو ويقبل ويرجّع رمز العميل. */
+    protected String clientToken(String staffToken, long contactId) throws Exception {
+        String token = inviteToken(staffToken, contactId);
+        String body = mvc.perform(post("/api/auth/invite/accept").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"%s\",\"password\":\"%s\"}".formatted(token, CLIENT_PASSWORD)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return JsonPath.read(body, "$.token");
+    }
+
+    /** A draft invoice with one line; returns its id. / مسودة فاتورة بسطر واحد؛ ويرجّع رقمها. */
+    protected long draftInvoice(String token, long companyId, int quantity, String unitPrice) throws Exception {
+        String body = mvc.perform(auth(post("/api/invoices"), token).content("""
+                        {"companyId":%d,"dueDate":"%s","lines":[{"description":"Consulting","quantity":%d,"unitPrice":%s}]}
+                        """.formatted(companyId, java.time.LocalDate.now().plusDays(14), quantity, unitPrice)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return ((Number) JsonPath.read(body, "$.invoice.id")).longValue();
+    }
+
+    protected String issuedInvoice(String token, long companyId, int quantity, String unitPrice) throws Exception {
+        long id = draftInvoice(token, companyId, quantity, unitPrice);
+        mvc.perform(auth(post("/api/invoices/%d/issue".formatted(id)), token)
+                        .content("{\"version\":%d}".formatted(versionOf("invoice", id))))
+                .andExpect(status().isOk());
+        return jdbc.queryForObject("select number from invoice where id = ?", String.class, id);
     }
 }

@@ -42,7 +42,7 @@ public class AuthController {
         this.userService = userService;
     }
 
-    public record LoginRequest(@NotBlank @Size(max = 50) String username, @NotBlank @Size(max = 72) String password) {
+    public record LoginRequest(@NotBlank @Size(max = 150) String username, @NotBlank @Size(max = 72) String password) {
     }
 
     public record LoginResponse(String token, Instant expiresAt, UserResponse user) {

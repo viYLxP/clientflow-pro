@@ -2,6 +2,8 @@ package com.clientflow.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -16,6 +18,10 @@ import com.clientflow.config.DemoDataSeeder;
 import com.clientflow.contact.ContactService;
 import com.clientflow.deal.DealRepository;
 import com.clientflow.deal.DealService;
+import com.clientflow.inquiry.InquiryService;
+import com.clientflow.invoice.InvoiceService;
+import com.clientflow.payment.PaymentService;
+import com.clientflow.portal.PortalAccessService;
 import com.clientflow.support.IntegrationTest;
 import com.clientflow.task.TaskService;
 import com.clientflow.user.AppUserRepository;
@@ -33,13 +39,16 @@ class DemoDataSeederTest extends IntegrationTest {
 
     private DemoDataSeeder seeder() {
         AppProperties enabled = new AppProperties(properties.jwt(), properties.cors(), properties.timeZone(),
-                new AppProperties.Seed(true, "Admin@12345", "Sales@12345"));
+                properties.vatRate(), new AppProperties.Seed(true, "Admin@12345", "Sales@12345", "Client@12345"),
+                properties.rateLimit(), properties.payments(), properties.portal());
         return new DemoDataSeeder(enabled, context.getBean(AppUserRepository.class),
                 context.getBean(PasswordEncoder.class), context.getBean(CompanyService.class),
                 context.getBean(ContactService.class), context.getBean(DealService.class),
                 context.getBean(DealRepository.class), context.getBean(TaskService.class),
-                context.getBean(ActivityService.class), context.getBean(JdbcTemplate.class),
-                context.getBean(TransactionTemplate.class));
+                context.getBean(ActivityService.class), context.getBean(InvoiceService.class),
+                context.getBean(PaymentService.class), context.getBean(PortalAccessService.class),
+                context.getBean(InquiryService.class), context.getBean(JdbcTemplate.class),
+                context.getBean(TransactionTemplate.class), context.getBean(EntityManager.class));
     }
 
     private int count(String sql) {
@@ -53,7 +62,9 @@ class DemoDataSeederTest extends IntegrationTest {
         jdbc.execute("truncate table app_user restart identity cascade");
         seeder().run(null);
 
-        assertThat(count("select count(*) from deal")).isEqualTo(15);
+        // 15 pipeline deals, plus one created by converting a contact-form inquiry.
+        // 15 صفقة في خط المبيعات، وزيادة وحدة انعملت من تحويل استفسار من نموذج التواصل.
+        assertThat(count("select count(*) from deal")).isEqualTo(16);
         // Every pipeline stage has at least one deal, so the board and the reports are never half empty.
         // كل مرحلة فيها صفقة على الأقل، حتى اللوحة والتقارير ما تكون نصها فاضي.
         assertThat(count("select count(distinct stage) from deal")).isEqualTo(6);
@@ -99,8 +110,34 @@ class DemoDataSeederTest extends IntegrationTest {
                 where u.username = 'sara' and t.status = 'OPEN' and t.due_date < current_date
                 """)).isPositive();
 
+        // Invoices in every state, with totals that add up and VAT at 15%.
+        // فواتير بكل الحالات، ومجاميعها مضبوطة والضريبة 15%.
+        assertThat(count("select count(*) from invoice")).isEqualTo(9);
+        assertThat(count("select count(distinct status) from invoice")).isEqualTo(4);
+        assertThat(count("""
+                select count(*) from invoice i
+                where i.subtotal <> (select sum(l.line_total) from invoice_line l where l.invoice_id = i.id)
+                   or i.vat <> round(i.subtotal * 0.15, 2)
+                """)).isZero();
+        assertThat(count("select count(*) from invoice where status = 'ISSUED' and due_date < current_date")).isEqualTo(1);
+        // Each paid invoice has exactly one paid payment: the test card and the bank transfer.
+        // كل فاتورة مدفوعة لها دفعة مدفوعة وحدة: البطاقة التجريبية والتحويل البنكي.
+        assertThat(jdbc.queryForList("""
+                select p.method from payment p join invoice i on i.id = p.invoice_id
+                where i.status = 'PAID' and p.status = 'PAID' order by p.method
+                """, String.class)).containsExactly("BANK_TRANSFER", "CARD");
+        assertThat(count("select count(*) from invoice where issued_at > now() or paid_at > now()")).isZero();
+
+        // The demo client signs in; the second contact is invited but has not set a password yet.
+        // العميل التجريبي يدخل؛ وجهة الاتصال الثانية انْدعت بس لسا ما اختارت كلمة مرور.
+        login("faisal@alnoor.example", "Client@12345");
+        assertThat(count("select count(*) from app_user where role = 'CLIENT' and not active and invite_token_hash is not null"))
+                .isEqualTo(1);
+        assertThat(jdbc.queryForList("select status from inquiry order by status", String.class))
+                .containsExactly("CONVERTED", "DISMISSED", "NEW", "NEW", "NEW");
+
         // Running again must not duplicate anything. / التشغيل مرة ثانية لازم ما يكرر أي شي.
         seeder().run(null);
-        assertThat(count("select count(*) from company")).isEqualTo(8);
+        assertThat(count("select count(*) from company")).isEqualTo(9);
     }
 }

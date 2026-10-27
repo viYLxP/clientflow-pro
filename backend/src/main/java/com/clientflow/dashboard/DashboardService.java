@@ -18,14 +18,19 @@ import org.springframework.transaction.annotation.Transactional;
 import com.clientflow.activity.ActivityDtos.ActivityResponse;
 import com.clientflow.activity.ActivityRepository;
 import com.clientflow.config.AppProperties;
+import com.clientflow.dashboard.DashboardDtos.Billing;
 import com.clientflow.dashboard.DashboardDtos.DashboardResponse;
 import com.clientflow.dashboard.DashboardDtos.RepSummary;
 import com.clientflow.dashboard.DashboardDtos.StageSummary;
 import com.clientflow.deal.DealDtos.DealResponse;
-import com.clientflow.deal.DealRepository;
 import com.clientflow.deal.DealRepository.StageTotal;
+import com.clientflow.deal.DealRepository;
 import com.clientflow.deal.DealService;
 import com.clientflow.deal.DealStage;
+import com.clientflow.inquiry.InquiryRepository;
+import com.clientflow.inquiry.InquiryStatus;
+import com.clientflow.invoice.InvoiceRepository;
+import com.clientflow.payment.PaymentRepository;
 import com.clientflow.task.TaskDtos.TaskResponse;
 import com.clientflow.task.TaskRepository;
 import com.clientflow.user.AppUser;
@@ -45,11 +50,18 @@ public class DashboardService {
     private final DealRepository deals;
     private final TaskRepository tasks;
     private final ActivityRepository activities;
+    private final InvoiceRepository invoices;
+    private final PaymentRepository payments;
+    private final InquiryRepository inquiries;
     private final CurrentUserService currentUser;
     private final AppProperties properties;
 
     public DashboardService(DealRepository deals, TaskRepository tasks, ActivityRepository activities,
+                            InvoiceRepository invoices, PaymentRepository payments, InquiryRepository inquiries,
                             CurrentUserService currentUser, AppProperties properties) {
+        this.invoices = invoices;
+        this.payments = payments;
+        this.inquiries = inquiries;
         this.deals = deals;
         this.tasks = tasks;
         this.activities = activities;
@@ -98,7 +110,10 @@ public class DashboardService {
                         .toList(),
                 deals.closingBy(DealService.OPEN, today.plusDays(CLOSING_SOON_DAYS), ownerId, top).stream()
                         .map(DealResponse::from).toList(),
-                activities.latest(top).stream().map(ActivityResponse::from).toList());
+                activities.latest(top).stream().map(ActivityResponse::from).toList(),
+                new Billing(invoices.outstanding(), invoices.countOverdue(today),
+                        payments.collected(monthStart, Instant.now().plusSeconds(1)),
+                        inquiries.countByStatus(InquiryStatus.NEW)));
     }
 
     static StageSummary summary(DealStage stage, StageTotal total) {
