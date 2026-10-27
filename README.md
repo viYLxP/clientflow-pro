@@ -63,6 +63,13 @@ The demo also has 9 invoices in every status (one paid by card, one by bank tran
 
 Change the passwords in `.env`. For a real installation, set `SEED_DEMO_DATA=false` and create users from the Users page.
 
+## Deployment
+
+Every green CI run on `main` publishes ready-to-run images for amd64 and arm64:
+`ghcr.io/viylxp/clientflow-pro-backend` and `ghcr.io/viylxp/clientflow-pro-frontend` (workflow `release.yml`).
+The production server runs this app together with the other two Pro apps behind Caddy with automatic HTTPS,
+nightly database backups, an optional nightly demo-data reset and automatic updates. Server files and steps: [`masar-pro/deploy`](https://github.com/viYLxP/masar-pro/tree/main/deploy).
+
 ## Local development
 
 You need Java 21, Node 22 and Docker (for PostgreSQL and the Testcontainers tests).
@@ -170,6 +177,12 @@ docker compose up --build
 **الدفع بالوضع التجريبي.** ادفع أي فاتورة مصدرة من البوابة. البطاقات التجريبية: `4111 1111 1111 1111` (مقبولة)، `4000 0000 0000 0002` (مرفوضة)، `4000 0000 0000 9995` (رصيد غير كافي)، مع أي تاريخ انتهاء مستقبلي وأي CVC. ولتشغيل البوابات الحقيقية حط مفاتيحها التجريبية في `.env` (`CARD_PAYMENT_PROVIDER=MOYASAR` أو `STRIPE`، و`MOYASAR_SECRET_KEY`، و`STRIPE_SECRET_KEY`، و`TABBY_SECRET_KEY` مع `TABBY_MERCHANT_CODE`، و`TAMARA_API_TOKEN`) وخل `PUBLIC_URL` هو العنوان اللي يفتحه العملاء.
 
 غيّر كلمات المرور في `.env`. وفي التشغيل الفعلي خلّ `SEED_DEMO_DATA=false` وأنشئ المستخدمين من صفحة المستخدمين.
+
+### الرفع على سيرفر
+
+كل تشغيل CI ناجح على `main` ينشر صور جاهزة (amd64 وarm64) في `ghcr.io/viylxp/clientflow-pro-backend` و`-frontend`.
+والسيرفر يشغّل هذا التطبيق مع تطبيقي Pro الثانيين خلف Caddy بشهادة HTTPS تلقائية، ونسخ احتياطي يومي،
+وتصفير اختياري لبيانات العرض كل ليلة، وتحديث تلقائي. الملفات والخطوات: [`masar-pro/deploy`](https://github.com/viYLxP/masar-pro/tree/main/deploy).
 
 ### الاختبارات
 
