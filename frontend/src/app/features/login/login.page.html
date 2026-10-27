@@ -67,5 +67,9 @@
       {{ (submitting() ? 'login.submitting' : 'login.submit') | t }}
     </button>
     <p class="hint" dir="auto">{{ 'login.demoHint' | t }}</p>
+    <p class="hint" dir="auto">{{ 'login.clientHint' | t }}</p>
+    <p class="hint">
+      <a routerLink="/">{{ 'login.backHome' | t }}</a>
+    </p>
   </form>
 </div>

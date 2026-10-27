@@ -1,0 +1,72 @@
+<div class="page-narrow">
+  <section class="card" aria-labelledby="activate-title">
+    <h1 id="activate-title">{{ 'activate.title' | t }}</h1>
+
+    @if (!token) {
+      <p class="alert alert--danger" role="alert" data-testid="invite-missing">
+        {{ 'activate.missing' | t }}
+      </p>
+    } @else if (inviteError(); as message) {
+      <h2>{{ 'activate.invalidTitle' | t }}</h2>
+      <p class="alert alert--danger" role="alert" data-testid="invite-invalid">{{ message }}</p>
+    } @else if (invite.isLoading()) {
+      <div class="loading" role="status">
+        <span class="spinner"></span>{{ 'activate.checking' | t }}
+      </div>
+    } @else if (invite.value(); as info) {
+      <p data-testid="invite-welcome">
+        {{ 'activate.welcome' | t: { name: info.fullName, company: info.companyName } }}
+      </p>
+      <p class="muted">
+        {{ 'activate.login' | t }} <span class="mono" dir="ltr">{{ info.login }}</span>
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (errorText(); as message) {
+          <p class="alert alert--danger" role="alert">{{ message }}</p>
+        }
+        <div class="field">
+          <label for="a-password">{{ 'activate.password' | t }}</label>
+          <input
+            id="a-password"
+            type="password"
+            formControlName="password"
+            autocomplete="new-password"
+            dir="ltr"
+            maxlength="72"
+            aria-describedby="a-password-hint a-password-err"
+            data-testid="activate-password"
+          />
+          <p class="hint" id="a-password-hint">{{ 'activate.passwordHint' | t }}</p>
+          <app-field-error
+            [control]="form.controls.password"
+            [server]="serverFields()['password']"
+            id="a-password-err"
+          />
+        </div>
+        <div class="field">
+          <label for="a-confirm">{{ 'activate.confirm' | t }}</label>
+          <input
+            id="a-confirm"
+            type="password"
+            formControlName="confirm"
+            autocomplete="new-password"
+            dir="ltr"
+            maxlength="72"
+            aria-describedby="a-confirm-err"
+            data-testid="activate-confirm"
+          />
+          <app-field-error [control]="form.controls.confirm" id="a-confirm-err" />
+        </div>
+        <button
+          type="submit"
+          class="btn btn--primary btn--block"
+          [disabled]="submitting()"
+          data-testid="activate-submit"
+        >
+          {{ (submitting() ? 'activate.submitting' : 'activate.submit') | t }}
+        </button>
+      </form>
+    }
+  </section>
+</div>

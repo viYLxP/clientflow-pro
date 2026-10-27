@@ -23,6 +23,15 @@
       </p>
     </div>
     <div class="page-header__actions">
+      @if (d.stage === 'WON' && canInvoice()) {
+        <a
+          class="btn btn--primary"
+          routerLink="/invoices/new"
+          [queryParams]="{ dealId: d.id }"
+          data-testid="create-invoice"
+          ><app-icon name="invoice" /> {{ 'deals.createInvoice' | t }}</a
+        >
+      }
       @if (canEdit() && !closed()) {
         <a class="btn" [routerLink]="['/deals', d.id, 'edit']"
           ><app-icon name="edit" /> {{ 'common.edit' | t }}</a

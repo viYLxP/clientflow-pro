@@ -1,0 +1,154 @@
+<section class="hero">
+  <p class="hero__eyebrow">{{ 'home.eyebrow' | t }}</p>
+  <h1>{{ 'home.title' | t }}</h1>
+  <p class="hero__lead">{{ 'home.subtitle' | t }}</p>
+  <div class="hero__actions">
+    <a class="btn btn--primary" href="#contact" data-testid="cta-contact">{{ 'home.cta' | t }}</a>
+    <a class="btn" routerLink="/login">{{ 'home.clientCta' | t }}</a>
+  </div>
+  <ul class="pay-logos" aria-label="mada, Visa, Mastercard, Apple Pay, Tabby, Tamara">
+    <li dir="ltr">mada</li>
+    <li dir="ltr">Visa</li>
+    <li dir="ltr">Mastercard</li>
+    <li dir="ltr">Apple Pay</li>
+    <li>{{ 'payment.method.TABBY' | t }}</li>
+    <li>{{ 'payment.method.TAMARA' | t }}</li>
+  </ul>
+</section>
+
+<section class="site-section" aria-labelledby="features-title">
+  <h2 id="features-title" class="site-section__title">{{ 'home.featuresTitle' | t }}</h2>
+  <ul class="feature-grid">
+    @for (f of features; track f.key) {
+      <li class="card feature">
+        <span class="feature__icon"><app-icon [name]="f.icon" /></span>
+        <h3>{{ 'home.features.' + f.key + '.title' | t }}</h3>
+        <p class="muted">{{ 'home.features.' + f.key + '.text' | t }}</p>
+      </li>
+    }
+  </ul>
+</section>
+
+<section class="site-section contact" id="contact" aria-labelledby="contact-title">
+  <div class="contact__intro">
+    <h2 id="contact-title">{{ 'home.contactTitle' | t }}</h2>
+    <p class="muted">{{ 'home.contactText' | t }}</p>
+  </div>
+
+  @if (sent()) {
+    <div class="card success-card" role="status" data-testid="inquiry-sent">
+      <span class="success-card__icon" aria-hidden="true"><app-icon name="check" /></span>
+      <h3>{{ 'home.sentTitle' | t }}</h3>
+      <p>{{ 'home.sentText' | t }}</p>
+      <button type="button" class="btn" (click)="another()">{{ 'home.sendAnother' | t }}</button>
+    </div>
+  } @else {
+    <form class="card" [formGroup]="form" (ngSubmit)="send()" novalidate data-testid="inquiry-form">
+      @if (errorText(); as message) {
+        <p class="alert alert--danger" role="alert" data-testid="inquiry-error">{{ message }}</p>
+      }
+      <div class="form-grid">
+        <div class="field">
+          <label for="q-name">{{ 'home.name' | t }}</label>
+          <input
+            id="q-name"
+            formControlName="name"
+            autocomplete="name"
+            dir="auto"
+            maxlength="120"
+            aria-describedby="q-name-err"
+          />
+          <app-field-error
+            [control]="form.controls.name"
+            [server]="serverFields()['name']"
+            patternKey="validation.NotBlank"
+            id="q-name-err"
+          />
+        </div>
+        <div class="field">
+          <label for="q-company"
+            >{{ 'home.company' | t }}
+            <span class="muted">({{ 'common.optional' | t }})</span></label
+          >
+          <input
+            id="q-company"
+            formControlName="companyName"
+            autocomplete="organization"
+            dir="auto"
+            maxlength="150"
+          />
+        </div>
+        <div class="field">
+          <label for="q-email">{{ 'home.email' | t }}</label>
+          <input
+            id="q-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            dir="ltr"
+            maxlength="150"
+            aria-describedby="q-email-err"
+          />
+          <app-field-error
+            [control]="form.controls.email"
+            [server]="serverFields()['email']"
+            id="q-email-err"
+          />
+        </div>
+        <div class="field">
+          <label for="q-phone"
+            >{{ 'home.phone' | t }} <span class="muted">({{ 'common.optional' | t }})</span></label
+          >
+          <input
+            id="q-phone"
+            type="tel"
+            formControlName="phone"
+            autocomplete="tel"
+            dir="ltr"
+            maxlength="30"
+            aria-describedby="q-phone-err"
+          />
+          <app-field-error
+            [control]="form.controls.phone"
+            [server]="serverFields()['phone']"
+            patternKey="validation.phoneFormat"
+            id="q-phone-err"
+          />
+        </div>
+        <div class="field form-grid--full">
+          <label for="q-message">{{ 'home.message' | t }}</label>
+          <textarea
+            id="q-message"
+            rows="5"
+            formControlName="message"
+            dir="auto"
+            maxlength="2000"
+            [placeholder]="'home.messagePlaceholder' | t"
+            aria-describedby="q-message-err"
+          ></textarea>
+          <app-field-error
+            [control]="form.controls.message"
+            [server]="serverFields()['message']"
+            id="q-message-err"
+          />
+        </div>
+        <!-- Spam trap: off-screen, skipped by keyboard and screen readers. / مصيدة الإزعاج: برا الشاشة، وتتخطاها لوحة المفاتيح وقارئ الشاشة. -->
+        <div class="honeypot" aria-hidden="true">
+          <label for="q-website">{{ 'home.trap' | t }}</label>
+          <input id="q-website" formControlName="website" tabindex="-1" autocomplete="off" />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="sending()"
+          data-testid="inquiry-submit"
+        >
+          <app-icon name="send" [flip]="true" />
+          {{ (sending() ? 'home.sending' : 'home.send') | t }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

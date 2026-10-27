@@ -1,0 +1,107 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'invoices.title' | t }}</h1>
+    <p>{{ 'invoices.subtitle' | t }}</p>
+  </div>
+  <div class="page-header__actions">
+    <a class="btn btn--primary" routerLink="/invoices/new" data-testid="new-invoice"
+      ><app-icon name="plus" /> {{ 'invoices.new' | t }}</a
+    >
+  </div>
+</header>
+
+<div class="toolbar" role="search">
+  <div class="search">
+    <label class="visually-hidden" for="inv-search">{{ 'common.search' | t }}</label>
+    <input
+      id="inv-search"
+      type="search"
+      [value]="searchText()"
+      (input)="onSearch($any($event.target).value)"
+      [placeholder]="'invoices.searchPlaceholder' | t"
+    />
+  </div>
+  <div>
+    <label class="visually-hidden" for="inv-status">{{ 'common.status' | t }}</label>
+    <select id="inv-status" (change)="setFilter({ status: $any($event.target).value || null })">
+      <option value="">{{ 'invoices.anyStatus' | t }}</option>
+      @for (s of statuses; track s) {
+        <option [value]="s" [selected]="s === status()">{{ 'invoices.status.' + s | t }}</option>
+      }
+    </select>
+  </div>
+  <label class="checkbox">
+    <input
+      type="checkbox"
+      [checked]="!!overdue()"
+      (change)="setFilter({ overdue: $any($event.target).checked ? 1 : null })"
+      data-testid="overdue-only"
+    />
+    {{ 'invoices.overdueOnly' | t }}
+  </label>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="invoices.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (invoices.isLoading() && !invoices.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (invoices.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ (hasFilters() ? 'common.noResults' : 'invoices.empty') | t }}</p>
+      @if (hasFilters()) {
+        <button type="button" class="btn" (click)="clearFilters()">
+          {{ 'common.clearFilters' | t }}
+        </button>
+      }
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="invoices.isLoading()">
+      <table data-testid="invoices-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'invoices.number' | t }}</th>
+            <th scope="col">{{ 'invoices.company' | t }}</th>
+            <th scope="col">{{ 'invoices.issueDate' | t }}</th>
+            <th scope="col">{{ 'invoices.dueDate' | t }}</th>
+            <th scope="col">{{ 'common.status' | t }}</th>
+            <th scope="col" class="cell-end">{{ 'invoices.total' | t }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (inv of result.content; track inv.id) {
+            <tr>
+              <td>
+                <a class="mono row-link" dir="ltr" [routerLink]="['/invoices', inv.id]">{{
+                  inv.number
+                }}</a>
+              </td>
+              <td>
+                <bdi>{{ inv.company.name }}</bdi>
+                @if (inv.contact) {
+                  <span class="list__sub"
+                    ><bdi>{{ inv.contact.fullName }}</bdi></span
+                  >
+                }
+              </td>
+              <td>{{ fmt.plainDate(inv.issueDate) }}</td>
+              <td [class.overdue]="inv.overdue">{{ fmt.plainDate(inv.dueDate) }}</td>
+              <td><app-invoice-status [status]="inv.status" [overdue]="inv.overdue" /></td>
+              <td class="cell-end num">{{ fmt.money(inv.total) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="result.page"
+      [totalPages]="result.totalPages"
+      (pageChange)="setFilter({ page: $event })"
+    />
+  }
+}

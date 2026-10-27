@@ -4,7 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 
 import { errorMessage, toApiError } from '../../core/api/api-error';
 import { ApiService } from '../../core/api/api.service';
-import { CompanyDetail, Contact, Deal, Page } from '../../core/api/models';
+import { CompanyDetail, Contact, Deal, InvoiceSummary, Page } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { canChange, websiteHref } from '../../core/crm';
 import { FormatService } from '../../core/i18n/format.service';
@@ -14,6 +14,7 @@ import { ConfirmService } from '../../core/ui/confirm.service';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { ActivityTimelineComponent } from '../shared/activity-timeline.component';
+import { InvoiceStatusComponent } from '../../shared/invoice-status.component';
 import { TaskPanelComponent } from '../shared/task-panel.component';
 
 /**
@@ -28,6 +29,7 @@ import { TaskPanelComponent } from '../shared/task-panel.component';
     IconComponent,
     ActivityTimelineComponent,
     TaskPanelComponent,
+    InvoiceStatusComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './company-detail.page.html',
@@ -56,6 +58,12 @@ export class CompanyDetailPage {
   protected readonly deals = rxResource({
     params: () => this.id(),
     stream: ({ params: companyId }) => this.api.get<Page<Deal>>('/deals', { companyId, size: 50 }),
+  });
+
+  protected readonly invoices = rxResource({
+    params: () => this.id(),
+    stream: ({ params: companyId }) =>
+      this.api.get<Page<InvoiceSummary>>('/invoices', { companyId, size: 10 }),
   });
 
   protected readonly errorText = computed(() =>
@@ -93,6 +101,7 @@ export class CompanyDetailPage {
             ? this.i18n.t('companies.inUse', {
                 deals: Number(apiError.details['deals'] ?? 0),
                 contacts: Number(apiError.details['contacts'] ?? 0),
+                invoices: Number(apiError.details['invoices'] ?? 0),
               })
             : errorMessage(this.i18n, apiError),
         );

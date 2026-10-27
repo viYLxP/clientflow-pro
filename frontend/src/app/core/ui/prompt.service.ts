@@ -7,12 +7,15 @@ export interface PromptRequest {
   confirmLabel: string;
   maxLength: number;
   danger?: boolean;
+  // Allows an empty answer (e.g. an optional bank reference); it resolves to "".
+  // يسمح بجواب فاضي (مثل مرجع بنكي اختياري)؛ ويرجّع "".
+  optional?: boolean;
 }
 
 /**
- * Asks the user for one required line of text, e.g. why a deal was lost:
+ * Asks the user for one line of text (required unless `optional`), e.g. why a deal was lost:
  * `const reason = await prompt.ask({...}); if (reason !== null) {...}`.
- * يطلب من المستخدم سطر نص واحد مطلوب، مثل سبب خسارة الصفقة.
+ * يطلب من المستخدم سطر نص واحد (مطلوب إلا لو `optional`)، مثل سبب خسارة الصفقة.
  * Resolves to the trimmed text, or null when cancelled.
  * يرجّع النص بدون مسافات زائدة، أو null لو ألغى.
  */

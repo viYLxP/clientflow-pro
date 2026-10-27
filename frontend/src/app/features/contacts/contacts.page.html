@@ -92,6 +92,18 @@
                     <button
                       type="button"
                       class="icon-btn"
+                      (click)="portalDialog.open(c)"
+                      [attr.aria-label]="('portalAccess.button' | t) + ' ' + c.fullName"
+                      [title]="'portalAccess.button' | t"
+                      [attr.data-testid]="'portal-' + c.id"
+                    >
+                      <app-icon name="key" />
+                    </button>
+                  }
+                  @if (canEdit(c)) {
+                    <button
+                      type="button"
+                      class="icon-btn"
                       (click)="open(c)"
                       [attr.aria-label]="('common.edit' | t) + ' ' + c.fullName"
                     >
@@ -221,3 +233,5 @@
     </div>
   </form>
 </dialog>
+
+<app-portal-access-dialog #portalDialog />

@@ -1,0 +1,243 @@
+<a class="breadcrumb" [routerLink]="isEdit() ? ['/invoices', id()] : '/invoices'">
+  <app-icon name="chevron" class="icon--back" [flip]="true" /> {{ 'common.back' | t }}
+</a>
+<header class="page-header">
+  <div>
+    <h1>{{ (isEdit() ? 'invoices.edit' : 'invoices.new') | t }}</h1>
+    <p>{{ 'invoices.draftHint' | t }}</p>
+  </div>
+</header>
+
+@if (isEdit() && existing.isLoading()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (isEdit() && existing.error()) {
+  <div class="alert alert--danger" role="alert">{{ 'errors.NOT_FOUND' | t }}</div>
+} @else if (notDraft()) {
+  <div class="alert alert--info" role="status">
+    {{
+      'errors.INVALID_STATUS'
+        | t: { status: ('invoices.status.' + existing.value()!.invoice.status | t) }
+    }}
+  </div>
+} @else if (readOnly()) {
+  <div class="alert alert--info" role="status">{{ 'invoices.readOnly' | t }}</div>
+} @else {
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate data-testid="invoice-form">
+    @if (errorText()) {
+      <div class="alert alert--danger" role="alert" data-testid="form-error">{{ errorText() }}</div>
+    }
+    <section class="card">
+      <div class="form-grid">
+        <div class="field">
+          <label for="inv-company">{{ 'invoices.company' | t }}</label>
+          <select
+            id="inv-company"
+            formControlName="companyId"
+            aria-describedby="inv-company-err"
+            data-testid="inv-company"
+          >
+            <option value="" disabled>{{ 'common.choose' | t }}</option>
+            @for (c of myCompanies(); track c.id) {
+              <option [value]="'' + c.id">{{ c.name }}</option>
+            }
+          </select>
+          <app-field-error
+            id="inv-company-err"
+            [control]="form.controls.companyId"
+            [server]="serverFields()['companyId']"
+          />
+        </div>
+        <div class="field">
+          <label for="inv-due">{{ 'invoices.dueDate' | t }}</label>
+          <input
+            id="inv-due"
+            type="date"
+            formControlName="dueDate"
+            [min]="today"
+            aria-describedby="inv-due-err"
+          />
+          <app-field-error
+            id="inv-due-err"
+            [control]="form.controls.dueDate"
+            [server]="serverFields()['dueDate']"
+          />
+        </div>
+        <div class="field">
+          <label for="inv-contact"
+            >{{ 'invoices.contact' | t }} <small>({{ 'common.optional' | t }})</small></label
+          >
+          <select id="inv-contact" formControlName="contactId" aria-describedby="inv-contact-hint">
+            <option value="">{{ 'invoices.noContact' | t }}</option>
+            @for (c of contacts.value()?.content ?? []; track c.id) {
+              <option [value]="'' + c.id">{{ c.fullName }}</option>
+            }
+          </select>
+          <p class="hint" id="inv-contact-hint">{{ 'invoices.contactHint' | t }}</p>
+        </div>
+        <div class="field">
+          <label for="inv-deal"
+            >{{ 'invoices.deal' | t }} <small>({{ 'common.optional' | t }})</small></label
+          >
+          <select id="inv-deal" formControlName="dealId" aria-describedby="inv-deal-hint">
+            <option value="">{{ 'invoices.noDeal' | t }}</option>
+            @for (d of deals.value()?.content ?? []; track d.id) {
+              <option [value]="'' + d.id">{{ d.title }} · {{ 'stage.' + d.stage | t }}</option>
+            }
+          </select>
+          <p class="hint" id="inv-deal-hint">{{ 'invoices.dealHint' | t }}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card section-gap" aria-labelledby="lines-title">
+      <div class="card__header">
+        <h2 id="lines-title">{{ 'invoices.lines' | t }}</h2>
+        <p class="hint">{{ 'invoices.pricesHint' | t }}</p>
+      </div>
+      @if (serverFields()['lines']; as rule) {
+        <p class="field__error" role="alert">{{ 'validation.' + rule | t }}</p>
+      }
+      <div class="table-wrap">
+        <table class="lines-table" formArrayName="lines">
+          <thead>
+            <tr>
+              <th scope="col">{{ 'invoices.description' | t }}</th>
+              <th scope="col" class="cell-end">{{ 'invoices.quantity' | t }}</th>
+              <th scope="col" class="cell-end">{{ 'invoices.unitPrice' | t }}</th>
+              <th scope="col" class="cell-end">{{ 'invoices.lineTotal' | t }}</th>
+              <th scope="col">
+                <span class="visually-hidden">{{ 'common.actions' | t }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (group of lines.controls; track group; let i = $index) {
+              <tr [formGroupName]="i" [attr.data-testid]="'line-' + i">
+                <td>
+                  <label class="visually-hidden" [for]="'l-desc-' + i"
+                    >{{ 'invoices.description' | t }} {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'l-desc-' + i"
+                    formControlName="description"
+                    dir="auto"
+                    maxlength="300"
+                    [attr.aria-describedby]="'l-desc-err-' + i"
+                  />
+                  <app-field-error
+                    [id]="'l-desc-err-' + i"
+                    [control]="group.controls.description"
+                    [server]="serverFields()['lines[' + i + '].description']"
+                    patternKey="validation.NotBlank"
+                  />
+                </td>
+                <td class="cell-end">
+                  <label class="visually-hidden" [for]="'l-qty-' + i"
+                    >{{ 'invoices.quantity' | t }} {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'l-qty-' + i"
+                    class="input-qty"
+                    formControlName="quantity"
+                    inputmode="numeric"
+                    dir="ltr"
+                    [attr.aria-describedby]="'l-qty-err-' + i"
+                  />
+                  <app-field-error
+                    [id]="'l-qty-err-' + i"
+                    [control]="group.controls.quantity"
+                    [server]="serverFields()['lines[' + i + '].quantity']"
+                    patternKey="validation.Min"
+                  />
+                </td>
+                <td class="cell-end">
+                  <label class="visually-hidden" [for]="'l-price-' + i"
+                    >{{ 'invoices.unitPrice' | t }} {{ i + 1 }}</label
+                  >
+                  <input
+                    [id]="'l-price-' + i"
+                    class="input-money"
+                    formControlName="unitPrice"
+                    inputmode="decimal"
+                    dir="ltr"
+                    [attr.aria-describedby]="'l-price-err-' + i"
+                  />
+                  <app-field-error
+                    [id]="'l-price-err-' + i"
+                    [control]="group.controls.unitPrice"
+                    [server]="serverFields()['lines[' + i + '].unitPrice']"
+                    patternKey="validation.Digits"
+                  />
+                </td>
+                <td class="cell-end num">{{ fmt.money(lineAmount(i)) }}</td>
+                <td class="cell-end">
+                  <button
+                    type="button"
+                    class="icon-btn icon-btn--danger"
+                    (click)="removeLine(i)"
+                    [disabled]="lines.length === 1"
+                    [attr.aria-label]="'invoices.removeLine' | t: { n: i + 1 }"
+                  >
+                    <app-icon name="trash" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
+        class="btn btn--small section-gap"
+        (click)="addLine()"
+        [disabled]="lines.length >= maxLines"
+        data-testid="add-line"
+      >
+        <app-icon name="plus" /> {{ 'invoices.addLine' | t }}
+      </button>
+
+      <dl class="totals" data-testid="form-totals">
+        <div>
+          <dt>{{ 'invoices.subtotal' | t }}</dt>
+          <dd class="num">{{ fmt.money(totals().subtotal) }}</dd>
+        </div>
+        <div>
+          <dt>{{ 'invoices.vat' | t }}</dt>
+          <dd class="num">{{ fmt.money(totals().vat) }}</dd>
+        </div>
+        <div class="totals__grand">
+          <dt>{{ 'invoices.total' | t }}</dt>
+          <dd class="num" data-testid="form-total">{{ fmt.money(totals().total) }}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="card section-gap">
+      <div class="field">
+        <label for="inv-notes"
+          >{{ 'invoices.notes' | t }} <small>({{ 'common.optional' | t }})</small></label
+        >
+        <textarea
+          id="inv-notes"
+          rows="3"
+          formControlName="notes"
+          dir="auto"
+          maxlength="1000"
+        ></textarea>
+      </div>
+      <div class="form-actions">
+        <a class="btn" [routerLink]="isEdit() ? ['/invoices', id()] : '/invoices'">{{
+          'common.cancel' | t
+        }}</a>
+        <button
+          type="submit"
+          class="btn btn--primary"
+          [disabled]="saving()"
+          data-testid="save-invoice"
+        >
+          {{ (saving() ? 'common.saving' : 'common.save') | t }}
+        </button>
+      </div>
+    </section>
+  </form>
+}

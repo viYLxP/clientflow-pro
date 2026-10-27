@@ -6,6 +6,8 @@ export const ADMIN = { username: 'admin', password: process.env['ADMIN_PASSWORD'
 const SALES_PASSWORD = process.env['SALES_PASSWORD'] ?? 'Sales@12345';
 export const SARA = { username: 'sara', password: SALES_PASSWORD };
 export const KHALID = { username: 'khalid', password: SALES_PASSWORD };
+// The demo client signs in to the portal with their email. / العميل التجريبي يدخل البوابة بإيميله.
+export const FAISAL = { username: 'faisal@alnoor.example', password: process.env['CLIENT_PASSWORD'] ?? 'Client@12345' };
 type Account = typeof ADMIN;
 
 export async function login(page: Page, user: Account = ADMIN): Promise<void> {
@@ -13,7 +15,55 @@ export async function login(page: Page, user: Account = ADMIN): Promise<void> {
   await page.locator('#username').fill(user.username);
   await page.locator('#password').fill(user.password);
   await page.locator('form button[type=submit]').click();
-  await expect(page).toHaveURL(/\/dashboard$/);
+  // Staff land on the dashboard, clients in their portal. / الموظف يوصل للوحة، والعميل لبوابته.
+  await expect(page).toHaveURL(user === FAISAL ? /\/portal\/invoices$/ : /\/dashboard$/);
+}
+
+async function authHeaders(request: APIRequestContext, user: Account): Promise<Record<string, string>> {
+  const auth = await request.post('/api/auth/login', { data: user });
+  expect(auth.ok()).toBeTruthy();
+  return { Authorization: `Bearer ${(await auth.json()).token}` };
+}
+
+/**
+ * Sara (Al Noor's account manager) issues an invoice to Faisal through the API and returns its number,
+ * so every payment test pays its own fresh invoice.
+ * سارة (مديرة حساب النور) تصدر فاتورة لفيصل عن طريق الـ API وترجع رقمها، حتى كل اختبار دفع يدفع فاتورته الجديدة.
+ */
+export async function issueInvoiceToFaisal(
+  request: APIRequestContext,
+  description: string,
+  unitPrice = 300,
+): Promise<{ id: number; number: string }> {
+  const headers = await authHeaders(request, SARA);
+  const contacts = await request.get('/api/contacts?q=faisal@alnoor.example', { headers });
+  const faisal = (await contacts.json()).content[0];
+  const due = new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
+  const draft = await request.post('/api/invoices', {
+    headers,
+    data: { companyId: faisal.company.id, contactId: faisal.id, dueDate: due, lines: [{ description, quantity: 2, unitPrice }] },
+  });
+  expect(draft.status()).toBe(201);
+  const { invoice } = await draft.json();
+  const issued = await request.post(`/api/invoices/${invoice.id}/issue`, { headers, data: { version: invoice.version } });
+  expect(issued.ok()).toBeTruthy();
+  return { id: invoice.id, number: invoice.number };
+}
+
+/**
+ * Sara adds a new person at Al Noor, so the invite test always starts from "no access".
+ * سارة تضيف شخص جديد في النور، حتى اختبار الدعوة يبدأ دايم من "بدون دخول".
+ */
+export async function createAlNoorContact(request: APIRequestContext, firstName: string, email: string): Promise<number> {
+  const headers = await authHeaders(request, SARA);
+  const companies = await request.get('/api/companies?q=Al Noor', { headers });
+  const companyId = (await companies.json()).content[0].id;
+  const contact = await request.post('/api/contacts', {
+    headers,
+    data: { firstName, lastName: 'Al-Shehri', email, companyId },
+  });
+  expect(contact.status()).toBe(201);
+  return (await contact.json()).id;
 }
 
 /**
@@ -21,9 +71,7 @@ export async function login(page: Page, user: Account = ADMIN): Promise<void> {
  * ينشئ صفقة مباشرة عن طريق الـ API، للاختبارات اللي تحتاج صفقة موجودة فقط (مثل فحص الملكية).
  */
 export async function createDealViaApi(request: APIRequestContext, user: Account, title: string): Promise<number> {
-  const auth = await request.post('/api/auth/login', { data: user });
-  expect(auth.ok()).toBeTruthy();
-  const headers = { Authorization: `Bearer ${(await auth.json()).token}` };
+  const headers = await authHeaders(request, user);
   const companies = await request.get('/api/companies?size=1', { headers });
   const companyId = (await companies.json()).content[0].id;
   const deal = await request.post('/api/deals', {

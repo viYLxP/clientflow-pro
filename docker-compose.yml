@@ -31,6 +31,21 @@ services:
       SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
       SALES_PASSWORD: ${SALES_PASSWORD:-Sales@12345}
+      CLIENT_PASSWORD: ${CLIENT_PASSWORD:-Client@12345}
+      # Payments: SANDBOX (built-in test gateway) until real keys are set. / المدفوعات: SANDBOX (بوابة تجريبية) لين تنحط مفاتيح حقيقية.
+      CARD_PAYMENT_PROVIDER: ${CARD_PAYMENT_PROVIDER:-SANDBOX}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8082}
+      MOYASAR_SECRET_KEY: ${MOYASAR_SECRET_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      TABBY_SECRET_KEY: ${TABBY_SECRET_KEY:-}
+      TABBY_MERCHANT_CODE: ${TABBY_MERCHANT_CODE:-}
+      TAMARA_API_URL: ${TAMARA_API_URL:-https://api-sandbox.tamara.co}
+      TAMARA_API_TOKEN: ${TAMARA_API_TOKEN:-}
+      # Client invite links stop working after this. / روابط دعوة العملاء توقف بعد هالمدة.
+      INVITE_VALIDITY: ${INVITE_VALIDITY:-7d}
+      # Per visitor IP, per 10 minutes. / لكل IP زائر، كل 10 دقائق.
+      RATE_LIMIT_INQUIRIES: ${RATE_LIMIT_INQUIRIES:-5}
+      RATE_LIMIT_ATTEMPTS: ${RATE_LIMIT_ATTEMPTS:-30}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8082}
     depends_on:
       db:

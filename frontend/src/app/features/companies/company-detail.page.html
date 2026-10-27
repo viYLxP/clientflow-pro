@@ -129,6 +129,43 @@
           }
         </dl>
       </section>
+      <section class="card section-gap" aria-labelledby="invoices-title">
+        <div class="card__header">
+          <h2 id="invoices-title">{{ 'companies.invoices' | t }}</h2>
+          @if (canEdit()) {
+            <a
+              class="btn btn--small"
+              routerLink="/invoices/new"
+              [queryParams]="{ companyId: d.company.id }"
+              data-testid="company-new-invoice"
+              ><app-icon name="plus" /> {{ 'invoices.new' | t }}</a
+            >
+          }
+        </div>
+        <ul class="list" data-testid="company-invoices">
+          @for (inv of invoices.value()?.content ?? []; track inv.id) {
+            <li>
+              <span class="list__main">
+                <a class="mono" dir="ltr" [routerLink]="['/invoices', inv.id]">{{ inv.number }}</a>
+                <span class="list__sub">{{
+                  'invoices.dueOn' | t: { date: fmt.plainDate(inv.dueDate) }
+                }}</span>
+              </span>
+              <span>
+                <app-invoice-status [status]="inv.status" [overdue]="inv.overdue" />
+                <span class="num list__sub">{{ fmt.money(inv.total) }}</span>
+              </span>
+            </li>
+          } @empty {
+            <li class="muted">{{ 'companies.noInvoices' | t }}</li>
+          }
+        </ul>
+        @if ((invoices.value()?.totalElements ?? 0) > 10) {
+          <a routerLink="/invoices" [queryParams]="{ q: d.company.name }">{{
+            'common.viewAll' | t
+          }}</a>
+        }
+      </section>
       <section class="card section-gap" aria-labelledby="people-title">
         <div class="card__header">
           <h2 id="people-title">{{ 'companies.contacts' | t }}</h2>

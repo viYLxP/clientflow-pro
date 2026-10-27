@@ -1,0 +1,119 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'inquiries.title' | t }}</h1>
+    <p>{{ 'inquiries.subtitle' | t }}</p>
+  </div>
+</header>
+
+<div class="tabs" role="group" [attr.aria-label]="'common.status' | t">
+  @for (s of statuses; track s) {
+    <button
+      type="button"
+      class="tab"
+      [class.tab--on]="current() === s"
+      [attr.aria-pressed]="current() === s"
+      (click)="show(s)"
+      [attr.data-testid]="'tab-' + s"
+    >
+      {{ 'inquiries.status.' + s | t }}
+    </button>
+  }
+  <button
+    type="button"
+    class="tab"
+    [class.tab--on]="current() === 'ALL'"
+    [attr.aria-pressed]="current() === 'ALL'"
+    (click)="show('ALL')"
+  >
+    {{ 'common.all' | t }}
+  </button>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="inquiries.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (inquiries.isLoading() && !inquiries.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (inquiries.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ 'inquiries.empty' | t }}</p>
+    </div>
+  } @else {
+    <ul class="inquiry-list" data-testid="inquiries">
+      @for (q of result.content; track q.id) {
+        <li class="card inquiry" [attr.data-testid]="'inquiry-' + q.id">
+          <div class="inquiry__head">
+            <div>
+              <strong
+                ><bdi>{{ q.name }}</bdi></strong
+              >
+              @if (q.companyName) {
+                · <bdi>{{ q.companyName }}</bdi>
+              }
+              <p class="list__sub">
+                <a [href]="'mailto:' + q.email" dir="ltr">{{ q.email }}</a>
+                @if (q.phone) {
+                  · <a [href]="'tel:' + q.phone" dir="ltr">{{ q.phone }}</a>
+                }
+              </p>
+            </div>
+            <span [class]="'badge badge--inq-' + q.status">{{
+              'inquiries.status.' + q.status | t
+            }}</span>
+          </div>
+          <p class="inquiry__message">
+            <bdi>{{ q.message }}</bdi>
+          </p>
+          <div class="inquiry__foot">
+            <span class="muted">
+              @if (q.handledBy && q.handledAt) {
+                {{
+                  'inquiries.handled'
+                    | t
+                      : {
+                          status: ('inquiries.status.' + q.status | t),
+                          name: q.handledBy.fullName,
+                          date: fmt.dateTime(q.handledAt),
+                        }
+                }}
+              } @else {
+                {{ 'inquiries.received' | t: { date: fmt.dateTime(q.createdAt) } }}
+              }
+            </span>
+            <span class="row-actions">
+              @if (q.status === 'NEW') {
+                <button type="button" class="btn btn--small" (click)="dismiss(q)">
+                  {{ 'inquiries.dismiss' | t }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--small btn--primary"
+                  (click)="convertDialog.open(q)"
+                  [attr.data-testid]="'convert-' + q.id"
+                >
+                  <app-icon name="briefcase" /> {{ 'inquiries.convert' | t }}
+                </button>
+              } @else if (q.deal) {
+                <a class="btn btn--small" [routerLink]="['/deals', q.deal.id]">{{
+                  'inquiries.openDeal' | t
+                }}</a>
+              }
+            </span>
+          </div>
+        </li>
+      }
+    </ul>
+    <app-pagination
+      [page]="result.page"
+      [totalPages]="result.totalPages"
+      (pageChange)="goTo($event)"
+    />
+  }
+}
+
+<app-convert-dialog #convertDialog (converted)="onConverted($event)" />

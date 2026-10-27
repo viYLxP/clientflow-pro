@@ -1,0 +1,101 @@
+<header class="page-header">
+  <div>
+    @if (me.value(); as m) {
+      <p class="muted" data-testid="portal-hello">
+        {{ 'portal.hello' | t: { name: m.fullName } }} · <bdi>{{ m.company.name }}</bdi>
+      </p>
+    }
+    <h1>{{ 'portal.title' | t }}</h1>
+    <p>{{ 'portal.subtitle' | t }}</p>
+  </div>
+</header>
+
+@if (open.value(); as o) {
+  <div class="card stat-card portal-due" data-testid="portal-due">
+    @if (o.totalElements > 0) {
+      <span class="stat-card__label">{{ 'portal.toPay' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(toPay()) }}</span>
+      <span class="stat-card__sub">{{
+        'portal.openInvoices' | t: { count: fmt.number(o.totalElements) }
+      }}</span>
+    } @else {
+      <span class="stat-card__value stat-card__value--ok">{{ 'portal.allPaid' | t }}</span>
+    }
+  </div>
+}
+
+<div class="toolbar section-gap">
+  <div>
+    <label for="p-status">{{ 'portal.statusFilter' | t }}</label>
+    <select id="p-status" (change)="setFilter({ status: $any($event.target).value || null })">
+      <option value="">{{ 'portal.anyStatus' | t }}</option>
+      @for (s of statuses; track s) {
+        <option [value]="s" [selected]="s === status()">{{ 'invoices.status.' + s | t }}</option>
+      }
+    </select>
+  </div>
+</div>
+
+@if (errorText()) {
+  <div class="alert alert--danger" role="alert">
+    {{ errorText() }}
+    <button type="button" class="btn btn--small" (click)="invoices.reload()">
+      {{ 'app.retry' | t }}
+    </button>
+  </div>
+} @else if (invoices.isLoading() && !invoices.hasValue()) {
+  <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+} @else if (invoices.value(); as result) {
+  @if (result.content.length === 0) {
+    <div class="card empty-state">
+      <p>{{ (status() ? 'common.noResults' : 'portal.empty') | t }}</p>
+    </div>
+  } @else {
+    <div class="table-wrap" [attr.aria-busy]="invoices.isLoading()">
+      <table data-testid="portal-invoices">
+        <thead>
+          <tr>
+            <th scope="col">{{ 'invoices.number' | t }}</th>
+            <th scope="col">{{ 'invoices.issueDate' | t }}</th>
+            <th scope="col">{{ 'invoices.dueDate' | t }}</th>
+            <th scope="col">{{ 'common.status' | t }}</th>
+            <th scope="col" class="cell-end">{{ 'invoices.total' | t }}</th>
+            <th scope="col" class="cell-end">
+              <span class="visually-hidden">{{ 'common.actions' | t }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (inv of result.content; track inv.id) {
+            <tr>
+              <td>
+                <a class="mono" dir="ltr" [routerLink]="['/portal/invoices', inv.number]">{{
+                  inv.number
+                }}</a>
+              </td>
+              <td>{{ fmt.plainDate(inv.issueDate) }}</td>
+              <td [class.overdue]="inv.overdue">{{ fmt.plainDate(inv.dueDate) }}</td>
+              <td><app-invoice-status [status]="inv.status" [overdue]="inv.overdue" /></td>
+              <td class="cell-end num">{{ fmt.money(inv.total) }}</td>
+              <td class="cell-end">
+                <a
+                  [class]="
+                    inv.status === 'ISSUED' ? 'btn btn--small btn--primary' : 'btn btn--small'
+                  "
+                  [routerLink]="['/portal/invoices', inv.number]"
+                  [attr.data-testid]="'open-' + inv.number"
+                  >{{ (inv.status === 'ISSUED' ? 'portal.pay' : 'portal.view') | t }}</a
+                >
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pagination
+      [page]="result.page"
+      [totalPages]="result.totalPages"
+      (pageChange)="setFilter({ page: $event })"
+    />
+  }
+}

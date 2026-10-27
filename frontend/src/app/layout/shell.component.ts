@@ -48,6 +48,7 @@ export class ShellComponent {
         { path: '/pipeline', label: 'nav.pipeline', icon: 'kanban' },
         { path: '/deals', label: 'nav.deals', icon: 'briefcase' },
         { path: '/tasks', label: 'nav.tasks', icon: 'checkSquare' },
+        { path: '/inquiries', label: 'nav.inquiries', icon: 'inbox' },
       ],
     },
     {
@@ -55,6 +56,7 @@ export class ShellComponent {
       items: [
         { path: '/companies', label: 'nav.companies', icon: 'building' },
         { path: '/contacts', label: 'nav.contacts', icon: 'users' },
+        { path: '/invoices', label: 'nav.invoices', icon: 'invoice' },
       ],
     },
     {

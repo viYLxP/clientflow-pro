@@ -1,8 +1,24 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNoHorizontalScroll, login } from './helpers';
+import { FAISAL, expectNoHorizontalScroll, login } from './helpers';
 
-const PAGES = ['/dashboard', '/pipeline', '/deals', '/deals/new', '/companies', '/companies/new', '/contacts', '/tasks', '/users'];
+const PAGES = [
+  '/dashboard',
+  '/pipeline',
+  '/deals',
+  '/deals/new',
+  '/companies',
+  '/companies/new',
+  '/contacts',
+  '/tasks',
+  '/invoices',
+  '/invoices/new',
+  '/invoices/1',
+  '/inquiries',
+  '/users',
+];
+// The public site and the client portal (INV-000001 is a seeded invoice to Faisal). / الموقع العام وبوابة العميل.
+const CLIENT_PAGES = ['/portal/invoices', '/portal/invoices/INV-000001', '/portal/profile'];
 
 test('switching language keeps typed input and flips direction', async ({ page }) => {
   await login(page);
@@ -34,6 +50,29 @@ for (const lang of ['ar', 'en'] as const) {
     for (const path of PAGES) {
       await page.goto(path);
       await expect(page.locator('h1').first()).toBeVisible();
+      await expect(page.locator('.loading')).toHaveCount(0);
+      await expectNoHorizontalScroll(page);
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test(`the website and client portal render without horizontal scroll or console errors (${lang})`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+    page.on('pageerror', (err) => errors.push(err.message));
+
+    await page.addInitScript((l) => localStorage.setItem('clientflow.lang', l), lang);
+    for (const path of ['/', '/login', '/activate']) {
+      await page.goto(path);
+      await expect(page.locator('h1').first()).toBeVisible();
+      await expectNoHorizontalScroll(page);
+    }
+    await login(page, FAISAL);
+    for (const path of CLIENT_PAGES) {
+      await page.goto(path);
+      await expect(page.locator('h1').first()).toBeAttached();
       await expect(page.locator('.loading')).toHaveCount(0);
       await expectNoHorizontalScroll(page);
     }

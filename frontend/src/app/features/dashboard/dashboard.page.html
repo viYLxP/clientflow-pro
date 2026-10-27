@@ -65,6 +65,52 @@
     </div>
   </div>
 
+  <!-- Billing is always for the whole team. / أرقام الفوترة دايم للفريق كامل. -->
+  <div class="grid grid--stats section-gap" data-testid="billing">
+    <a
+      class="card stat-card stat-card--link"
+      routerLink="/invoices"
+      [queryParams]="{ status: 'ISSUED' }"
+    >
+      <span class="stat-card__label">{{ 'dashboard.outstanding' | t }}</span>
+      <span class="stat-card__value num" data-testid="stat-outstanding">{{
+        fmt.money(d.billing.outstanding)
+      }}</span>
+      <span class="stat-card__sub">{{ 'common.team' | t }}</span>
+    </a>
+    <a
+      class="card stat-card stat-card--link"
+      [class.stat-card--danger]="d.billing.overdueCount > 0"
+      routerLink="/invoices"
+      [queryParams]="{ overdue: 1 }"
+    >
+      <span class="stat-card__label">{{ 'invoices.overdue' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.number(d.billing.overdueCount) }}</span>
+      <span class="stat-card__sub">{{
+        'dashboard.overdueInvoices' | t: { count: fmt.number(d.billing.overdueCount) }
+      }}</span>
+    </a>
+    <a
+      class="card stat-card stat-card--link"
+      routerLink="/invoices"
+      [queryParams]="{ status: 'PAID' }"
+    >
+      <span class="stat-card__label">{{ 'dashboard.collected' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.money(d.billing.collectedMonth) }}</span>
+      <span class="stat-card__sub">{{ 'dashboard.collectedHint' | t }}</span>
+    </a>
+    <a
+      class="card stat-card stat-card--link"
+      [class.stat-card--warn]="d.billing.newInquiries > 0"
+      routerLink="/inquiries"
+      data-testid="stat-inquiries"
+    >
+      <span class="stat-card__label">{{ 'dashboard.newInquiries' | t }}</span>
+      <span class="stat-card__value num">{{ fmt.number(d.billing.newInquiries) }}</span>
+      <span class="stat-card__sub">{{ 'dashboard.inquiriesHint' | t }}</span>
+    </a>
+  </div>
+
   <div class="grid grid--2">
     <section class="card" aria-labelledby="stage-title">
       <div class="card__header">

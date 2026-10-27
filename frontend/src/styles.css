@@ -1219,3 +1219,529 @@ th.cell-end {
     overflow-wrap: anywhere;
   }
 }
+
+/* ---------- Public site and client portal / الموقع العام وبوابة العميل ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem max(1rem, calc((100% - 1100px) / 2));
+  background: var(--c-surface);
+  border-bottom: 1px solid var(--c-border);
+}
+.site-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--c-text);
+  text-decoration: none;
+}
+.site-header__nav {
+  display: flex;
+  flex: 1;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.site-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--radius-sm);
+  color: var(--c-muted);
+  text-decoration: none;
+  font-weight: 500;
+}
+.site-link:hover {
+  background: var(--c-surface-2);
+  color: var(--c-text);
+}
+.site-link--active {
+  background: var(--c-primary-soft);
+  color: var(--c-primary-hover);
+}
+.site-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 2.5rem;
+  min-height: calc(100vh - 140px);
+}
+.site-main:focus {
+  outline: none;
+}
+.site-footer {
+  border-top: 1px solid var(--c-border);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--c-muted);
+  font-size: 0.85rem;
+}
+.site-footer p {
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .site-header {
+    flex-wrap: wrap;
+  }
+  .site-header__nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+  .site-link span {
+    font-size: 0.9rem;
+  }
+}
+.hero {
+  text-align: center;
+  padding: 3rem 0 2rem;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.hero h1 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-bottom: 0.75rem;
+}
+.hero__eyebrow {
+  display: inline-block;
+  padding: 0.2rem 0.75rem;
+  border-radius: 999px;
+  background: var(--c-primary-soft);
+  color: var(--c-primary-hover);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.hero__lead {
+  color: var(--c-muted);
+  font-size: 1.08rem;
+}
+.hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+.pay-logos {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0;
+  margin: 1.75rem 0 0;
+}
+.pay-logos li {
+  padding: 0.25rem 0.7rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  color: var(--c-muted);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.site-section {
+  margin-top: 2.5rem;
+}
+.site-section__title {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+.feature-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 1rem;
+}
+.feature-grid .card + .card {
+  margin-top: 0;
+}
+.feature__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-primary-soft);
+  color: var(--c-primary);
+  margin-bottom: 0.75rem;
+}
+.feature h3 {
+  font-size: 1.02rem;
+}
+.feature p {
+  margin: 0;
+}
+.contact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .contact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Spam trap: far off-screen instead of display:none, which some bots detect and skip. */
+/* مصيدة الإزعاج: بعيد برا الشاشة بدل display:none اللي بعض الروبوتات تكتشفه وتتجاوزه. */
+.honeypot {
+  position: absolute;
+  inset-inline-start: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.page-narrow {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.success-card {
+  text-align: center;
+  border-top: 3px solid var(--c-success);
+  padding: 2rem 1.5rem;
+}
+.success-card__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  margin-bottom: 1rem;
+}
+.success-card__icon .icon svg {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.success-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+.portal-due {
+  max-width: 360px;
+}
+.stat-card__value--ok {
+  font-size: 1.1rem;
+  color: var(--c-success);
+}
+.stat-card--link {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s;
+}
+.stat-card--link:hover {
+  border-color: var(--c-border-strong);
+}
+
+/* ---------- Invoices / الفواتير ---------- */
+.invoice-doc__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.invoice-doc__head h2 {
+  font-size: 1.35rem;
+  margin: 0 0 0.35rem;
+}
+.invoice-doc__head p {
+  margin: 0;
+}
+.invoice-doc__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, auto));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+.invoice-doc__meta dt {
+  color: var(--c-muted);
+  font-size: 0.82rem;
+}
+.invoice-doc__meta dd {
+  margin: 0;
+}
+.invoice-doc__notes {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-surface-2);
+  white-space: pre-line;
+}
+.totals {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 340px;
+  margin-block: 1rem 0;
+  margin-inline: auto 0;
+}
+.totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.totals dt {
+  color: var(--c-muted);
+}
+.totals dd {
+  margin: 0;
+}
+.totals__grand {
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--c-border);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.totals__grand dt {
+  color: var(--c-text);
+}
+.lines-table td {
+  vertical-align: top;
+}
+.lines-table input {
+  width: 100%;
+}
+.lines-table .input-qty {
+  max-width: 6rem;
+  text-align: end;
+}
+.lines-table .input-money {
+  max-width: 9rem;
+  text-align: end;
+}
+.lines-table td:first-child {
+  min-width: 16rem;
+}
+.badge--inv-DRAFT,
+.badge--inq-DISMISSED,
+.badge--portal-NONE,
+.badge--portal-DISABLED {
+  background: var(--c-surface-2);
+  color: var(--c-muted);
+}
+.badge--inv-ISSUED,
+.badge--inq-NEW,
+.badge--portal-INVITED,
+.badge--pay-PENDING {
+  background: var(--c-primary-soft);
+  color: var(--c-primary-hover);
+  border-color: transparent;
+}
+.badge--inv-PAID,
+.badge--inq-CONVERTED,
+.badge--portal-ACTIVE,
+.badge--pay-PAID,
+.badge--success {
+  background: var(--c-success-soft);
+  color: var(--c-success);
+  border-color: transparent;
+}
+.badge--inv-VOID,
+.badge--pay-FAILED {
+  background: var(--c-danger-soft);
+  color: var(--c-danger);
+  border-color: transparent;
+}
+.badge--pay-REFUNDED,
+.badge--warn {
+  background: var(--c-warning-soft);
+  color: var(--c-warning);
+  border-color: transparent;
+}
+
+/* ---------- Payments / المدفوعات ---------- */
+.alert--success {
+  background: var(--c-success-soft);
+  border-color: transparent;
+  color: var(--c-success);
+}
+fieldset.field {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1rem;
+  min-width: 0;
+}
+.form-grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+}
+.page-header--center {
+  justify-content: center;
+  text-align: center;
+}
+.pay-due {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 0.75rem;
+}
+.pay-due strong {
+  font-size: 1.5rem;
+}
+/* Radio cards: the real radio stays in the page (keyboard and screen readers), only visually hidden. */
+/* بطاقات الاختيار: زر الراديو الحقيقي باقي في الصفحة (للكيبورد وقارئ الشاشة)، بس مخفي بصريًا. */
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 0.6rem;
+}
+.choice {
+  position: relative;
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  background: var(--c-surface);
+  cursor: pointer;
+}
+.choice input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  pointer-events: none;
+}
+.choice__title {
+  font-weight: 600;
+}
+.choice__title .icon {
+  vertical-align: -0.15em;
+}
+.choice:hover {
+  border-color: var(--c-border-strong);
+}
+.choice--on {
+  border-color: var(--c-primary);
+  background: var(--c-primary-soft);
+  box-shadow: inset 0 0 0 1px var(--c-primary);
+}
+.choice:has(input:focus-visible) {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+}
+.pay-plan {
+  margin: 0.5rem 0 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-primary-soft);
+}
+.pay-plan__list {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.pay-plan__list li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.pay-page .page-header h1 {
+  font-size: 2rem;
+  margin: 0.25rem 0;
+}
+.pay-page__label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--c-primary);
+}
+.wallet-sheet__brand {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+/* ---------- Inquiries and portal access / الاستفسارات ودخول البوابة ---------- */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.tab {
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--c-border);
+  border-radius: 999px;
+  background: var(--c-surface);
+  color: var(--c-muted);
+  cursor: pointer;
+  font-weight: 500;
+}
+.tab--on {
+  background: var(--c-primary);
+  border-color: var(--c-primary);
+  color: var(--c-on-primary);
+}
+.inquiry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.inquiry-list .card + .card {
+  margin-top: 0;
+}
+.inquiry__head,
+.inquiry__foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+}
+.inquiry__head p {
+  margin: 0;
+}
+.inquiry__message {
+  margin: 0.75rem 0;
+  white-space: pre-line;
+}
+.inquiry__foot {
+  align-items: center;
+  font-size: 0.88rem;
+}
+.invite-link {
+  margin-top: 1rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-primary-soft);
+}
+.invite-link .input-group input {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+/* ---------- Print: the invoice only / الطباعة: الفاتورة بس ---------- */
+@media print {
+  .site-header,
+  .site-footer,
+  .no-print,
+  .skip-link {
+    display: none !important;
+  }
+  .site-main {
+    padding: 0;
+    max-width: none;
+  }
+  .split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .card {
+    box-shadow: none;
+    border: 0;
+  }
+}

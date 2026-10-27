@@ -64,6 +64,16 @@ export function riyadhToday(now: Date = new Date()): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Riyadh' }).format(now);
 }
 
+/**
+ * A calendar date plus some days, both as YYYY-MM-DD (used for default due dates).
+ * تاريخ تقويم زائد عدد أيام، بصيغة YYYY-MM-DD (لتواريخ الاستحقاق الافتراضية).
+ */
+export function addDays(isoDate: string, days: number): string {
+  const d = new Date(`${isoDate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 // Icon per activity type, shared by the timeline and the dashboard. / أيقونة لكل نوع نشاط، مشتركة بين السجل واللوحة.
 export const ACTIVITY_ICONS: Record<ActivityType, string> = {
   NOTE: 'note',

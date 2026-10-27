@@ -25,6 +25,7 @@ import { FieldErrorComponent } from '../../core/ui/field-error.component';
 import { IconComponent } from '../../core/ui/icon.component';
 import { PaginationComponent } from '../../core/ui/pagination.component';
 import { ToastService } from '../../core/ui/toast.service';
+import { PortalAccessDialogComponent } from './portal-access-dialog.component';
 
 /**
  * Contacts list with search and a company filter; create and edit happen in a dialog on the same page.
@@ -38,6 +39,7 @@ import { ToastService } from '../../core/ui/toast.service';
     IconComponent,
     PaginationComponent,
     FieldErrorComponent,
+    PortalAccessDialogComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './contacts.page.html',

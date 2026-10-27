@@ -4,9 +4,11 @@ import { ADMIN, SARA, login } from './helpers';
 
 test.describe('authentication', () => {
   test('rejects a wrong password, then signs in (Arabic, RTL)', async ({ page }) => {
+    // Visitors see the public site, and its header leads to the sign-in page.
+    // الزائر يشوف الموقع العام، والهيدر يودّيه لصفحة الدخول.
     await page.goto('/');
-    // Unauthenticated users are sent to the login page.
-    // المستخدم غير المسجّل يتحوّل لصفحة الدخول.
+    await expect(page.getByTestId('inquiry-form')).toBeVisible();
+    await page.getByTestId('sign-in').click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
     await expect(page.locator('html')).toHaveAttribute('lang', 'ar');

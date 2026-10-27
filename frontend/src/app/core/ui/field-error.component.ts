@@ -53,6 +53,7 @@ export class FieldErrorComponent {
       if (errors['min'])
         return this.i18n.t(Number(control.value) < 0 ? 'validation.DecimalMin' : 'validation.Min');
       if (errors['max']) return this.i18n.t('validation.Max');
+      if (errors['mismatch']) return this.i18n.t('validation.passwordMismatch');
     }
     // Server-side error: shown until the user edits the field (the form clears it on change).
     // خطأ من الخادم: يظهر لين يعدّل المستخدم الحقل (النموذج يمسحه عند التغيير).

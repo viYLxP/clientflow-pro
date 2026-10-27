@@ -33,6 +33,17 @@ const PATHS: Record<string, string> = {
   x: 'M18 6 6 18M6 6l12 12',
   chevron: 'M9 18l6-6-6-6',
   eye: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  card: 'M2 5h20v14H2zM2 10h20M6 15h4',
+  wallet: 'M7 2h10v20H7zM11 18h2',
+  bank: 'M3 21h18M4 10h16M12 3l9 5H3zM6 10v8M10 10v8M14 10v8M18 10v8',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
+  split: 'M12 3v18M3 12h18M5 5h14v14H5z',
+  invoice: 'M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6M9 15h4',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5h13L22 12v7H2v-7z',
+  key: 'M15 7a4 4 0 1 1-3.9 4.9L3 20v-3h3v-3h3l1.1-1.1A4 4 0 0 1 15 7zM16 10h.01',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
+  send: 'M22 2 11 13M22 2l-7 20-4-9-9-4z',
+  ban: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM4.9 4.9l14.2 14.2',
 };
 
 /**

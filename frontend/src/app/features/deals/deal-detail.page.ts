@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 
 import { errorMessage, toApiError } from '../../core/api/api-error';
 import { ApiService } from '../../core/api/api.service';
-import { Deal, DealStage, OPEN_STAGES, StageChange } from '../../core/api/models';
+import { CompanyDetail, Deal, DealStage, OPEN_STAGES, StageChange } from '../../core/api/models';
 import { AuthService } from '../../core/auth/auth.service';
 import { canChange, isClosed, nextStage } from '../../core/crm';
 import { FormatService } from '../../core/i18n/format.service';
@@ -65,6 +65,17 @@ export class DealDetailPage {
     const d = this.deal.value();
     return !!d && canChange(this.auth.user(), [d.owner]);
   });
+  // Invoices are issued by the company's account manager (or an admin), not the deal owner.
+  // الفواتير يصدرها مدير حساب الشركة (أو المدير)، مو مالك الصفقة.
+  protected readonly canInvoice = computed(() => {
+    const d = this.deal.value();
+    return !!d && (this.auth.isAdmin() || this.companyOwnerId() === this.auth.user()?.id);
+  });
+  private readonly company = rxResource({
+    params: () => this.deal.value()?.company.id,
+    stream: ({ params: id }) => (id ? this.api.get<CompanyDetail>(`/companies/${id}`) : of(null)),
+  });
+  private readonly companyOwnerId = computed(() => this.company.value()?.company.owner.id);
   protected readonly closed = computed(() => {
     const d = this.deal.value();
     return !!d && isClosed(d.stage);

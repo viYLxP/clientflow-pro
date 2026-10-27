@@ -55,6 +55,14 @@ export function errorMessage(i18n: I18nService, error: ApiError): string {
   if (typeof params['stage'] === 'string') {
     params['stage'] = i18n.t(`stage.${params['stage']}`);
   }
+  // Same for an invoice or inquiry status ("…while the invoice is Paid").
+  // ونفس الشي لحالة الفاتورة أو الاستفسار ("…والفاتورة مدفوعة").
+  if (typeof params['status'] === 'string') {
+    const status = params['status'];
+    const invoice = i18n.t(`invoices.status.${status}`);
+    params['status'] =
+      invoice !== `invoices.status.${status}` ? invoice : i18n.t(`inquiries.status.${status}`);
+  }
   const known = i18n.t(`errors.${error.code}`, params);
   return known === `errors.${error.code}` ? i18n.t('errors.UNKNOWN') : known;
 }

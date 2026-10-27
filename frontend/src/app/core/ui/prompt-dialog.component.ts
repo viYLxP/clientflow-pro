@@ -12,8 +12,8 @@ import { TranslatePipe } from '../i18n/translate.pipe';
 import { PromptService } from './prompt.service';
 
 /**
- * Native <dialog> with one required text field (focus trap, Escape and backdrop come from showModal()).
- * نافذة <dialog> أصلية فيها حقل نص واحد مطلوب (حصر التركيز وزر Escape والخلفية من showModal()).
+ * Native <dialog> with one text field (focus trap, Escape and backdrop come from showModal()).
+ * نافذة <dialog> أصلية فيها حقل نص واحد (حصر التركيز وزر Escape والخلفية من showModal()).
  */
 @Component({
   selector: 'app-prompt-dialog',
@@ -73,7 +73,7 @@ export class PromptDialogComponent {
   // The error appears only after a try, so the dialog does not open in red.
   // الخطأ يظهر بعد المحاولة فقط، حتى ما تنفتح النافذة باللون الأحمر.
   protected showError(): boolean {
-    return this.touched() && this.text().trim() === '';
+    return this.touched() && !this.prompt.current()?.optional && this.text().trim() === '';
   }
 
   constructor() {
@@ -95,7 +95,7 @@ export class PromptDialogComponent {
     event.preventDefault();
     this.touched.set(true);
     const value = this.text().trim();
-    if (value) {
+    if (value || this.prompt.current()?.optional) {
       this.prompt.answer(value);
     }
   }

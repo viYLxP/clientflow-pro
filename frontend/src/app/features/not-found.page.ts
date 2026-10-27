@@ -11,7 +11,7 @@ import { TranslatePipe } from '../core/i18n/translate.pipe';
     <section class="empty-state empty-state--page">
       <h1>{{ 'notFound.title' | t }}</h1>
       <p>{{ 'notFound.body' | t }}</p>
-      <a class="btn btn--primary" routerLink="/dashboard">{{ 'notFound.home' | t }}</a>
+      <a class="btn btn--primary" routerLink="/">{{ 'notFound.home' | t }}</a>
     </section>
   `,
 })

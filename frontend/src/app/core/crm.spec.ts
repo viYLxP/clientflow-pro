@@ -7,6 +7,7 @@ import {
   nextStage,
   riyadhToday,
   websiteHref,
+  addDays,
 } from './crm';
 
 describe('crm helpers', () => {
@@ -54,5 +55,11 @@ describe('crm helpers', () => {
     // 22:30 UTC is already the next day in Riyadh (UTC+3). / 22:30 UTC هو اليوم التالي في الرياض.
     expect(riyadhToday(new Date('2026-03-14T22:30:00Z'))).toBe('2026-03-15');
     expect(riyadhToday(new Date('2026-03-14T20:59:00Z'))).toBe('2026-03-14');
+  });
+
+  it('addDays crosses month and year ends', () => {
+    expect(addDays('2026-10-27', 14)).toBe('2026-11-10');
+    expect(addDays('2026-12-25', 10)).toBe('2027-01-04');
+    expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
   });
 });

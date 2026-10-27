@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ApiError, errorMessage, toApiError } from '../../core/api/api-error';
 import { AuthService } from '../../core/auth/auth.service';
@@ -10,12 +10,14 @@ import { FieldErrorComponent } from '../../core/ui/field-error.component';
 import { IconComponent } from '../../core/ui/icon.component';
 
 /**
- * Sign-in page.
- * صفحة تسجيل الدخول.
+ * Sign-in page for staff (username) and clients (their email). The server tells them apart by role,
+ * and each lands on their own home: the dashboard or the client portal.
+ * صفحة الدخول للموظفين (اسم المستخدم) والعملاء (إيميلهم). الخادم يفرّق بينهم بالدور،
+ * وكل واحد يوصل لصفحته: لوحة التحكم أو بوابة العميل.
  */
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, TranslatePipe, FieldErrorComponent, IconComponent],
+  imports: [ReactiveFormsModule, RouterLink, TranslatePipe, FieldErrorComponent, IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.page.html',
 })
@@ -29,7 +31,7 @@ export class LoginPage {
   readonly expired = input<string | undefined>();
 
   protected readonly form = inject(NonNullableFormBuilder).group({
-    username: ['', [Validators.required, Validators.maxLength(50)]],
+    username: ['', [Validators.required, Validators.maxLength(150)]],
     password: ['', [Validators.required, Validators.maxLength(72)]],
   });
   protected readonly submitting = signal(false);
@@ -53,7 +55,7 @@ export class LoginPage {
     this.apiError.set(null);
     const { username, password } = this.form.getRawValue();
     this.auth.login(username.trim(), password).subscribe({
-      next: () => void this.router.navigateByUrl('/dashboard'),
+      next: () => void this.router.navigateByUrl(this.auth.home()),
       error: (err: unknown) => {
         this.submitting.set(false);
         // Translate the server error code (e.g. BAD_CREDENTIALS) into the current language.

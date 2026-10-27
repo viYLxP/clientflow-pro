@@ -1,0 +1,92 @@
+<header class="page-header">
+  <div>
+    <h1>{{ 'portal.profileTitle' | t }}</h1>
+    <p>{{ 'portal.profileText' | t }}</p>
+  </div>
+</header>
+
+<div class="split">
+  <section class="card" aria-labelledby="me-title">
+    <h2 id="me-title" class="visually-hidden">{{ 'portal.profileTitle' | t }}</h2>
+    @if (me.value(); as m) {
+      <dl class="detail-list" data-testid="portal-me">
+        <dt>{{ 'common.name' | t }}</dt>
+        <dd>
+          <bdi>{{ m.fullName }}</bdi>
+        </dd>
+        <dt>{{ 'contacts.company' | t }}</dt>
+        <dd>
+          <bdi>{{ m.company.name }}</bdi>
+        </dd>
+        <dt>{{ 'common.email' | t }}</dt>
+        <dd dir="ltr">{{ m.email }}</dd>
+        <dt>{{ 'common.phone' | t }}</dt>
+        <dd dir="ltr">{{ m.phone ?? '—' }}</dd>
+        <dt>{{ 'portal.jobTitle' | t }}</dt>
+        <dd>
+          <bdi>{{ m.jobTitle ?? '—' }}</bdi>
+        </dd>
+      </dl>
+    } @else if (me.isLoading()) {
+      <div class="loading" role="status"><span class="spinner"></span>{{ 'app.loading' | t }}</div>
+    }
+  </section>
+
+  <form class="card" [formGroup]="form" (ngSubmit)="submit()" novalidate aria-labelledby="pw-title">
+    <h2 id="pw-title">{{ 'portal.changePassword' | t }}</h2>
+    @if (errorText(); as message) {
+      <p class="alert alert--danger" role="alert">{{ message }}</p>
+    }
+    <div class="field">
+      <label for="pw-current">{{ 'portal.currentPassword' | t }}</label>
+      <input
+        id="pw-current"
+        type="password"
+        formControlName="currentPassword"
+        autocomplete="current-password"
+        dir="ltr"
+        aria-describedby="pw-current-err"
+        data-testid="pw-current"
+      />
+      <app-field-error
+        [control]="form.controls.currentPassword"
+        [server]="serverFields()['currentPassword']"
+        id="pw-current-err"
+      />
+    </div>
+    <div class="field">
+      <label for="pw-new">{{ 'portal.newPassword' | t }}</label>
+      <input
+        id="pw-new"
+        type="password"
+        formControlName="newPassword"
+        autocomplete="new-password"
+        dir="ltr"
+        aria-describedby="pw-new-hint pw-new-err"
+        data-testid="pw-new"
+      />
+      <p class="hint" id="pw-new-hint">{{ 'activate.passwordHint' | t }}</p>
+      <app-field-error
+        [control]="form.controls.newPassword"
+        [server]="serverFields()['newPassword']"
+        id="pw-new-err"
+      />
+    </div>
+    <div class="field">
+      <label for="pw-confirm">{{ 'portal.confirmPassword' | t }}</label>
+      <input
+        id="pw-confirm"
+        type="password"
+        formControlName="confirm"
+        autocomplete="new-password"
+        dir="ltr"
+        aria-describedby="pw-confirm-err"
+        data-testid="pw-confirm"
+      />
+      <app-field-error [control]="form.controls.confirm" id="pw-confirm-err" />
+    </div>
+    <button type="submit" class="btn btn--primary" [disabled]="saving()" data-testid="pw-submit">
+      {{ (saving() ? 'common.saving' : 'common.save') | t }}
+    </button>
+  </form>
+</div>

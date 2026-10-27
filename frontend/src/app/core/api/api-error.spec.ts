@@ -54,4 +54,18 @@ describe('api-error', () => {
     );
     expect(errorMessage(i18n, err)).toBe(i18n.t('errors.UNKNOWN'));
   });
+
+  it('translates an invoice or inquiry status inside the message', () => {
+    const paid = toApiError(
+      new HttpErrorResponse({ status: 409, error: { code: 'INVALID_STATUS', status: 'PAID' } }),
+    );
+    expect(errorMessage(i18n, paid)).toBe('This is not allowed while it is Paid.');
+    const converted = toApiError(
+      new HttpErrorResponse({
+        status: 409,
+        error: { code: 'INVALID_STATUS', status: 'CONVERTED' },
+      }),
+    );
+    expect(errorMessage(i18n, converted)).toBe('This is not allowed while it is Converted.');
+  });
 });

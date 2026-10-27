@@ -27,14 +27,25 @@ export class AuthService {
   readonly token = this.tokenSignal.asReadonly();
   readonly user = this.userSignal.asReadonly();
   readonly isAdmin = computed(() => this.userSignal()?.role === 'ADMIN');
+  readonly isClient = computed(() => this.userSignal()?.role === 'CLIENT');
+  readonly isStaff = computed(() => !!this.userSignal() && !this.isClient());
+  // Where each role lands after signing in: clients in their portal, staff on the dashboard.
+  // الصفحة اللي يوصل لها كل دور بعد الدخول: العميل لبوابته، والموظف للوحة.
+  readonly home = computed(() => (this.isClient() ? '/portal' : '/dashboard'));
 
   login(username: string, password: string): Observable<LoginResponse> {
-    return this.api.post<LoginResponse>('/auth/login', { username, password }).pipe(
-      tap((response) => {
-        this.storeToken(response.token);
-        this.userSignal.set(response.user);
-      }),
-    );
+    return this.api
+      .post<LoginResponse>('/auth/login', { username, password })
+      .pipe(tap((response) => this.adopt(response)));
+  }
+
+  /**
+   * Starts a session from a login response, e.g. right after a client accepts their invite.
+   * يبدأ جلسة من رد تسجيل الدخول، مثلًا بعد ما يقبل العميل دعوته مباشرة.
+   */
+  adopt(response: LoginResponse): void {
+    this.storeToken(response.token);
+    this.userSignal.set(response.user);
   }
 
   /**
@@ -60,8 +71,11 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clients go back to the public site, staff to the sign-in page.
+    // العميل يرجع للموقع العام، والموظف لصفحة الدخول.
+    const target = this.isClient() ? '/' : '/login';
     this.clear();
-    void this.router.navigate(['/login']);
+    void this.router.navigateByUrl(target);
   }
 
   /** Called by the interceptor on any 401 from the API. / يستدعيه الـ interceptor عند أي 401 من الـ API. */
